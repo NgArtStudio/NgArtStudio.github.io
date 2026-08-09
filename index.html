@@ -39,9 +39,116 @@
         @keyframes carouselFade { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
         @keyframes pulse-fade { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
         .pulse-fade-anim { animation: pulse-fade 1.5s infinite ease-in-out; }
+
+        /* Animación 18: Radar con paleta del sitio (#a9d9e5 / accent) */
+        @keyframes radar {
+            0% { box-shadow: 0 0 0 0 rgba(169, 217, 229, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(169, 217, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(169, 217, 229, 0); }
+        }
+        .animate-radar { animation: radar 2s infinite; }
+
+        /* Animación 06: Jelatina */
+        @keyframes jelly {
+            0%, 100% { transform: scale(1, 1); }
+            30% { transform: scale(1.25, 0.75); }
+            40% { transform: scale(0.75, 1.25); }
+            50% { transform: scale(1.15, 0.85); }
+            65% { transform: scale(0.95, 1.05); }
+            75% { transform: scale(1.05, 0.95); }
+        }
+        .hover-jelly:hover { animation: jelly 0.6s ease; }
+
+        @keyframes jelly-click {
+            0% { transform: scale(1, 1); }
+            25% { transform: scale(0.65, 1.35) rotate(-4deg); }
+            50% { transform: scale(1.3, 0.7) rotate(4deg); }
+            75% { transform: scale(0.85, 1.15); }
+            100% { transform: scale(1, 1); }
+        }
+        .hover-jelly:active { animation: jelly-click 0.45s ease-out !important; }
+
+        /* Estilo para las partículas flotantes */
+        .jelly-particle {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: floatParticle 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            z-index: 9999;
+        }
+        @keyframes floatParticle {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx), var(--dy)) scale(0.2);
+            }
+        }
+
+        /* Cursor personalizado (pixel-retro) */
+        @media (min-width: 768px) {
+            * { cursor: none !important; }
+        }
+        
+        #cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 6px;
+            background-color: #a9d9e5;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 8px #a9d9e5, 0 0 2px #ffffff;
+            image-rendering: pixelated;
+            transition: width 0.15s, height 0.15s, background-color 0.15s;
+        }
+
+        #cursor-ring {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 32px;
+            height: 32px;
+            border: 2px dashed #a9d9e5;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s ease-out, height 0.2s ease-out, border-color 0.2s, background-color 0.2s, border-radius 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 8px rgba(169, 217, 229, 0.2);
+        }
+
+        #cursor-ring.active {
+            border-style: solid;
+            border-color: #ffffff;
+            background-color: rgba(169, 217, 229, 0.15);
+            box-shadow: 0 0 12px rgba(169, 217, 229, 0.4), inset 0 0 8px rgba(169, 217, 229, 0.3);
+        }
+
+        #fx-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9997;
+        }
     </style>
 </head>
 <body class="h-full overflow-hidden text-whitepure relative text-[7px]">
+
+    <!-- Elementos del Cursor Personalizado (pixel-retro) -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <canvas id="fx-canvas"></canvas>
 
     <!-- Fondo estático -->
     <div class="fixed inset-0 w-full h-full z-[-1] flex items-center justify-center pointer-events-none">
@@ -49,7 +156,7 @@
             class="w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] opacity-80"
             style="
                 background-color: #070e0f;
-                -webkit-mask: url('iconong3d2.svg') no-repeat center / contain;
+                -webkit-mask: url('iconong3d.svg') no-repeat center / contain;
                 mask: url('iconong3d.svg') no-repeat center / contain;
             "
         >
@@ -83,61 +190,88 @@
     </div>
 
     <header class="absolute top-0 left-0 right-0 z-10 flex flex-col items-center pointer-events-none px-2 sm:px-0">
-        <div class="w-full max-w-4xl bg-gradient-to-b from-[#11302f] to-[#09201f] rounded-b-[2rem] sm:rounded-b-[3.5rem] px-4 sm:px-8 pt-3 sm:pt-4 pb-4 sm:pb-6 flex flex-col items-center gap-4 pointer-events-auto shadow-2xl">
-            <button onclick="toggleCatalog(true)" class="group flex flex-col items-center justify-center smooth-transition active:scale-95" title="Ver Catálogo">
-                <div class="grid grid-cols-2 gap-1 p-1 rounded-lg hover:bg-accent/10 smooth-transition">
-                    <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition"></div>
-                    <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition"></div>
-                    <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition"></div>
-                    <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition"></div>
+        <div class="w-full max-w-4xl bg-gradient-to-b from-[#11302f] to-[#09201f] rounded-b-[2rem] sm:rounded-b-[3.5rem] px-4 sm:px-8 pt-3 sm:pt-4 pb-4 sm:pb-6 flex items-center justify-center pointer-events-auto shadow-2xl">
+            <button onclick="toggleCatalog(true)" class="group flex flex-col items-center justify-center smooth-transition active:scale-95 hover-jelly" title="Ver Catálogo">
+                <!-- Soporte para icono con imagen/SVG o cuadrícula estilizada -->
+                <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
+                    <img src="catalogo.svg" alt="Catálogo" class="w-full h-full object-contain group-hover:scale-110 smooth-transition" 
+                         onerror="this.onerror=null; this.outerHTML='<div class=\'grid grid-cols-2 gap-1 p-1 rounded-lg hover:bg-accent/10 smooth-transition\'><div class=\'w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition bg-accent/20\'></div><div class=\'w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition bg-accent/20\'></div><div class=\'w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition bg-accent/20\'></div><div class=\'w-3 h-3 sm:w-4 sm:h-4 rounded-md border-2 border-whitepure group-hover:border-accent smooth-transition bg-accent/20\'></div></div>';">
                 </div>
             </button>
         </div>
 
         <div class="flex items-center justify-center gap-3 sm:gap-6 mt-2 sm:mt-4 pointer-events-auto">
-            <button onclick="navigateCarousel(-1)" class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-b from-[#11302f] to-[#09201f] hover:border-accent border-2 border-transparent flex items-center justify-center overflow-hidden smooth-transition shrink-0 relative group">
+            <button onclick="playClickSound(); navigateCarousel(-1)" class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-b from-[#11302f] to-[#09201f] hover:border-accent border-2 border-transparent flex items-center justify-center overflow-hidden smooth-transition hover-jelly shrink-0 relative group">
                 <svg class="w-5 h-5 sm:w-8 sm:h-8 text-whitepure group-hover:text-accent smooth-transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <div id="main-viewer-container" class="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-darkbg border-[3px] sm:border-[4px] border-whitepure flex items-center justify-center overflow-hidden shadow-lg relative shrink-0 smooth-transition">
-                <model-viewer id="viewer-curr" class="w-full h-full pointer-events-none" auto-rotate interaction-prompt="none" disable-zoom disable-pan></model-viewer>
+
+            <div class="flex flex-col items-center gap-1.5 sm:gap-2">
+                <div id="main-viewer-container" class="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-darkbg border-[3px] sm:border-[4px] border-whitepure flex items-center justify-center overflow-hidden shadow-lg relative shrink-0 smooth-transition">
+                    <model-viewer id="viewer-curr" class="w-full h-full pointer-events-none" auto-rotate interaction-prompt="none" disable-zoom disable-pan></model-viewer>
+                </div>
+
+                <!-- Botón de cambio de luces del entorno -->
+                <button onclick="toggleLighting()" class="group flex items-center gap-1.5 px-2.5 py-1 bg-[#11302f]/90 border border-accent/40 hover:border-accent rounded-full smooth-transition active:scale-95 hover-jelly" title="Cambiar Iluminación">
+                    <svg id="light-icon" class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent group-hover:scale-110 smooth-transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span id="light-mode-label" class="text-[7px] sm:text-[9px] font-black text-accent uppercase tracking-wider">Estándar</span>
+                </button>
             </div>
-            <button onclick="navigateCarousel(1)" class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-b from-[#11302f] to-[#09201f] hover:border-accent border-2 border-transparent flex items-center justify-center overflow-hidden smooth-transition shrink-0 relative group">
+
+            <button onclick="playClickSound(); navigateCarousel(1)" class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-[#11302f] hover:border-accent border-2 border-transparent flex items-center justify-center overflow-hidden smooth-transition hover-jelly shrink-0 relative group">
                 <svg class="w-5 h-5 sm:w-8 sm:h-8 text-whitepure group-hover:text-accent smooth-transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
             </button>
         </div>
     </header>
 
-    <footer class="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 z-10 flex flex-col md:grid md:grid-cols-3 items-center md:items-end gap-3 md:gap-0 pointer-events-none">
-        <div class="pointer-events-auto flex justify-center md:justify-start order-2 md:order-1">
+    <footer class="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 z-10 grid grid-cols-3 items-end pointer-events-none">
+        <div class="pointer-events-auto flex justify-start">
             <div class="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center smooth-transition hover:scale-110">
-                <img src="iconong.svg" alt="Logo" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/100x100/09201f/a9d9e5?text=NG';">
+                <img src="iconong.svg" alt="Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.outerHTML='<div class=\'w-full h-full rounded-2xl bg-panelbg border-2 border-accent flex items-center justify-center text-accent font-black text-sm sm:text-lg shadow-lg\'>NG</div>';">
             </div>
         </div>
 
-        <div class="w-full max-w-xl mx-auto pointer-events-auto flex flex-col items-center gap-2 sm:gap-3 order-1 md:order-2">
+        <div class="w-full max-w-xl mx-auto pointer-events-auto flex flex-col items-center gap-2 sm:gap-3">
             <div id="animation-controls-container" class="flex flex-col items-center gap-1 select-none smooth-transition opacity-50 pointer-events-none">
-                <button id="btn-toggle-play" onclick="togglePlayAnimation()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center hover:bg-panelbg text-whitepure smooth-transition">
+                <button id="btn-toggle-play" onclick="playClickSound(); togglePlayAnimation()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center hover:bg-panelbg text-whitepure smooth-transition">
                     <span id="play-pause-icon" class="text-sm sm:text-lg font-black tracking-widest text-whitepure">||</span>
                 </button>
                 <div class="flex items-center justify-center gap-3 sm:gap-4">
-                    <button onclick="navigateAnimation(-1)" class="p-1 hover:scale-125 active:scale-90 smooth-transition"><svg class="w-3 h-3 sm:w-4 sm:h-4 text-whitepure fill-current" viewBox="0 0 24 24"><polygon points="18,4 6,12 18,20"/></svg></button>
+                    <button onclick="playClickSound(); navigateAnimation(-1)" class="p-1 hover:scale-125 hover-jelly active:scale-90 smooth-transition"><svg class="w-3 h-3 sm:w-4 sm:h-4 text-whitepure fill-current" viewBox="0 0 24 24"><polygon points="18,4 6,12 18,20"/></svg></button>
                     <span id="current-animation-name" class="text-xs sm:text-lg font-bold uppercase tracking-widest text-whitepure">"ESTÁTICO"</span>
-                    <button onclick="navigateAnimation(1)" class="p-1 hover:scale-125 active:scale-90 smooth-transition"><svg class="w-3 h-3 sm:w-4 sm:h-4 text-whitepure fill-current" viewBox="0 0 24 24"><polygon points="6,4 18,12 6,20"/></svg></button>
+                    <button onclick="playClickSound(); navigateAnimation(1)" class="p-1 hover:scale-125 hover-jelly active:scale-90 smooth-transition"><svg class="w-3 h-3 sm:w-4 sm:h-4 text-whitepure fill-current" viewBox="0 0 24 24"><polygon points="6,4 18,12 6,20"/></svg></button>
                 </div>
             </div>
 
-            <div class="w-full border-[4px] md:border-[8px] border-panelbg bg-transparent rounded-[1.5rem] sm:rounded-[2.5rem] p-3 sm:p-5 text-center flex flex-col items-center justify-center gap-1 sm:gap-2 smooth-transition">
-                <span id="active-category-label" class="text-[10px] sm:text-sm font-black tracking-widest text-darkbg bg-accent px-3 sm:px-5 py-0.5 sm:py-1 rounded-full uppercase">"tipo"</span>
-                <p id="active-description-text" class="text-whitepure font-bold text-sm sm:text-2xl tracking-wide leading-relaxed max-w-sm">"Descripción Del modelo"</p>
-            </div>
+            <!-- Botón SVG de descripción -->
+            <button onclick="playClickSound(); toggleDescModal(true)" class="p-1 sm:p-2 rounded-xl hover:bg-accent/10 active:scale-90 smooth-transition flex items-center justify-center" title="Ver Descripción">
+                <img src="des.svg" alt="Descripción" class="w-7 h-7 sm:w-10 sm:h-10 object-contain hover:scale-110 smooth-transition" onerror="this.onerror=null; this.parentNode.innerHTML='<svg class=\'w-7 h-7 sm:w-10 sm:h-10 text-whitepure hover:text-accent\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z\'/></svg>';">
+            </button>
             
-            <p class="text-[6px] text-whitepure/40 font-bold uppercase tracking-widest mt-[-0.25rem] sm:mt-[-0.5rem]">NgArtStudio©</p>
+            <p class="text-[6px] text-whitepure/40 font-bold uppercase tracking-widest mt-[-0.25rem] sm:mt-[-0.5rem]">NgArtStudio© 2026. Todos los derechos reservados.</p>
         </div>
 
-        <div class="pointer-events-auto flex justify-center md:justify-end order-3">
-            <a href="https://linktr.ee/NgArtStudio?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGnV4mzcu8P_XDdrBtgGGk0hkyLR4ssJVvBcr8YJSyJLt8Hv6P3fMCS5qmKuLM_aem_DIDWflWZFxw84mcZ9biTSA" target="_blank" class="bg-whitepure hover:bg-accent text-darkbg font-black text-sm sm:text-xl tracking-widest uppercase px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg smooth-transition inline-block hover:scale-105 active:scale-95">CONTACTO</a>
+        <div class="pointer-events-auto flex justify-end">
+            <!-- Botón de contacto con animación de radar integrada manteniendo la paleta -->
+            <a href="https://linktr.ee/NgArtStudio?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGnV4mzcu8P_XDdrBtgGGk0hkyLR4ssJVvBcr8YJSyJLt8Hv6P3fMCS5qmKuLM_aem_DIDWflWZFxw84mcZ9biTSA" target="_blank" onclick="playClickSound()" class="w-10 h-10 sm:w-14 sm:h-14 bg-whitepure p-2 sm:p-2.5 rounded-2xl animate-radar flex items-center justify-center smooth-transition hover:scale-105 active:scale-95 shrink-0" title="Contacto">
+                <img src="contacto.svg" alt="Contacto" class="w-full h-full object-contain" onerror="this.onerror=null; this.outerHTML='<svg class=\'w-full h-full text-accent p-1.5 object-contain hover:text-whitepure smooth-transition\' fill=\'currentColor\' viewBox=\'0 0 24 24\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z\'/></svg>';">
+            </a>
         </div>
     </footer>
+
+    <div id="desc-overlay" class="hidden fixed inset-0 bg-darkbg/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="fade-in w-full max-w-xs sm:max-w-md bg-darkbg border-[3px] sm:border-[4px] border-[#09201f] rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 flex flex-col items-center text-center relative shadow-2xl">
+            <div class="[perspective:1000px] absolute top-4 right-4 sm:top-5 sm:right-5">
+                <button onclick="playClickSound(); toggleDescModal(false)" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-accent/20 flex items-center justify-center text-accent smooth-transition transition-transform duration-500 [transform-style:preserve-3d] hover:[transform:rotateX(180deg)] active:scale-90">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 font-bold" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <h3 id="desc-modal-title" class="text-sm sm:text-xl font-black uppercase tracking-wider text-whitepure mt-2 mb-2">"Nombre Del Modelo"</h3>
+            <span id="desc-modal-category" class="text-[10px] sm:text-xs font-black tracking-widest text-darkbg bg-accent px-4 py-1 rounded-full uppercase mb-4">"tipo"</span>
+            <p id="desc-modal-text" class="text-whitepure font-bold text-xs sm:text-base tracking-wide leading-relaxed max-w-xs">"Descripción Del modelo"</p>
+        </div>
+    </div>
 
     <div id="catalog-overlay" class="hidden fixed inset-0 bg-darkbg/90 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
         <div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-20">
@@ -165,7 +299,9 @@
                 </div>
             </div>
 
-            <button onclick="toggleCatalog(false)" class="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-darkbg hover:bg-accent hover:text-darkbg flex items-center justify-center smooth-transition text-whitepure active:scale-90"><svg class="w-5 h-5 sm:w-6 sm:h-6 font-bold" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            <div class="[perspective:1000px] absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+                <button onclick="toggleCatalog(false)" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-darkbg hover:bg-accent hover:text-darkbg flex items-center justify-center smooth-transition transition-transform duration-500 [transform-style:preserve-3d] hover:[transform:rotateX(180deg)] text-whitepure active:scale-90"><svg class="w-5 h-5 sm:w-6 sm:h-6 font-bold" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 sm:pr-2 mb-2 sm:mb-6">
                 <div id="catalog-grid" class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 p-1"></div>
@@ -174,31 +310,113 @@
     </div>
 
     <script>
+        const LIGHTING_MODES = [
+            { name: "Estándar", exposure: 1.0, shadowIntensity: 1.5, shadowSoftness: 0.6, toneMapping: "neutral" },
+            { name: "Noche", exposure: 0.35, shadowIntensity: 2.5, shadowSoftness: 0.3, toneMapping: "neutral" },
+            { name: "Estudio", exposure: 1.8, shadowIntensity: 0.8, shadowSoftness: 0.8, toneMapping: "commerce" },
+            { name: "Suave", exposure: 0.75, shadowIntensity: 0.5, shadowSoftness: 1.0, toneMapping: "neutral" },
+            { name: "Dramático", exposure: 1.2, shadowIntensity: 3.0, shadowSoftness: 0.1, toneMapping: "aces" },
+            { name: "Atardecer", exposure: 0.65, shadowIntensity: 1.8, shadowSoftness: 0.5, toneMapping: "agx" },
+            { name: "Sol Directo", exposure: 1.6, shadowIntensity: 2.2, shadowSoftness: 0.1, toneMapping: "neutral" },
+            { name: "Silueta", exposure: 0.18, shadowIntensity: 3.0, shadowSoftness: 0.2, toneMapping: "aces" },
+            { name: "Cine", exposure: 1.1, shadowIntensity: 2.0, shadowSoftness: 0.4, toneMapping: "aces" },
+            { name: "Vibrante", exposure: 1.4, shadowIntensity: 1.2, shadowSoftness: 0.7, toneMapping: "agx" }
+        ];
+        let currentLightIndex = 0;
+
+        function applyLightingMode(mode) {
+            viewer.exposure = mode.exposure;
+            viewer.shadowIntensity = mode.shadowIntensity;
+            viewer.shadowSoftness = mode.shadowSoftness;
+            if (mode.toneMapping) {
+                viewer.toneMapping = mode.toneMapping;
+            }
+        }
+
+        function toggleLighting() {
+            playClickSound();
+            currentLightIndex = (currentLightIndex + 1) % LIGHTING_MODES.length;
+            const mode = LIGHTING_MODES[currentLightIndex];
+            
+            applyLightingMode(mode);
+            
+            const label = document.getElementById('light-mode-label');
+            if (label) label.innerText = mode.name;
+        }
+
         const MIS_MODELOS = [
-            { archivo: "hormiga.gltf", titulo: "Hormiga de miel", categoria: "entidad", descripcion: "Es una hormiga muyy mielosa." },
+            { archivo: "text.gltf", titulo: "NgArtStudio", categoria: "nada", descripcion: "Bienvenido al Portafolio de NgArtStudio." },
+            { archivo: "plush.gltf", titulo: "Peluchito Ng y Vikki", categoria: "bloque", descripcion: "MODELO | NgArtStudio." },
+            { archivo: "hormiga.gltf", titulo: "Hormiga de miel", categoria: "entidad", descripcion: "Es una hormiga muyy mielosa. | Comisión BIN" },
             { archivo: "gata.gltf", titulo: "Xenny Normal", categoria: "personaje", descripcion: "La mascota oficial de XenovaTeam." },
             { archivo: "gatapower.gltf", titulo: "Xenny 100%", categoria: "personaje", descripcion: "La mascota oficial de XenovaTeam." },
-            { archivo: "Karka - Madre.gltf", titulo: "Reina Karka", categoria: "entidad", descripcion: "Reina de las Karkas | serie Mythrise ft.XenovaTeam." },            
+            { archivo: "pinguino.gltf", titulo: "pinguino", categoria: "entidad", descripcion: "un pinguino de los Squid Game. | Comisión Mr_Club" },
+
+            // Mythrise models
+            { archivo: "Karka - Madre.gltf", titulo: "Reina Karka", categoria: "entidad", descripcion: "Reina de las Karkas | serie Mythrise ft.XenovaTeam." },
+            { archivo: "Karka.gltf", titulo: "Karkas", categoria: "entidad", descripcion: "Karka | serie Mythrise ft.XenovaTeam." }, 
+            { archivo: "widowsmodel.gltf", titulo: "Widow", categoria: "entidad", descripcion: "Widow| serie Mythrise ft.XenovaTeam." },
+            { archivo: "serpiente.gltf", titulo: "serpiente", categoria: "entidad", descripcion: "serpiente | serie Mythrise ft.XenovaTeam." },
+            { archivo: "Macaco.gltf", titulo: "Macaco", categoria: "entidad", descripcion: "Macaco | serie Mythrise ft.XenovaTeam." },
+            { archivo: "Macaco_Titan.gltf", titulo: "Macaco_Titan", categoria: "entidad", descripcion: "Macaco_Titan | serie Mythrise ft.XenovaTeam." },
+            { archivo: "MacaKing.gltf", titulo: "MacaKing", categoria: "entidad", descripcion: "MacaKing | serie Mythrise ft.XenovaTeam." },
+            { archivo: "Golems de tierra Adultas.gltf", titulo: "Golems de tierra Adultas", categoria: "entidad", descripcion: "Golems de tierra Adultas | serie Mythrise ft.XenovaTeam." },
+            { archivo: "Golems de tierra.gltf", titulo: "Golems de tierra", categoria: "entidad", descripcion: "Golems de tierra | serie Mythrise ft.XenovaTeam." },
+
+            { archivo: "arpiav.gltf", titulo: "Arpia Rosa", categoria: "entidad", descripcion: "Aripia | serie Mythrise ft.XenovaTeam." },           
             { archivo: "Nymeria.gltf", titulo: "Nymeria", categoria: "personaje", descripcion: "Diosa del espacio | serie Mythrise ft.XenovaTeam." },
             { archivo: "Sylvara.gltf", titulo: "Sylvara", categoria: "personaje", descripcion: "Diosa de la creación | serie Mythrise ft.XenovaTeam." },
             { archivo: "Kharvex.gltf", titulo: "Kharvex", categoria: "personaje", descripcion: "Dios del Limbo | serie Mythrise ft.XenovaTeam." },
+
             { archivo: "perrito.gltf", titulo: "Perro Waton", categoria: "personaje", descripcion: "MODELO | Comisión USER." },
             { archivo: "Krainch.gltf", titulo: "Krainch", categoria: "entidad", descripcion: "La fackin Cabra | serie Kronia ft.XenovaTeam." },
             { archivo: "SpringBonnieDestruido.gltf", titulo: "Spring Bonnie Destruido", categoria: "personaje", descripcion: "MODELO | NgArtStudio." },
             { archivo: "Esme.gltf", titulo: "Esme Corgui Pequeña", categoria: "personaje", descripcion: "MODELO | Comisión Esmeralda." },
             { archivo: "esme_new.gltf", titulo: "Esme Corgui Grande", categoria: "personaje", descripcion: "MODELO | Comisión Esmeralda." },
-            { archivo: "arpiav.gltf", titulo: "Arpia Rosa", categoria: "entidad", descripcion: "Aripia | serie Mythrise ft.XenovaTeam." },
-            { archivo: "skin_vikki_slim.gltf", titulo: "Skin Vikki", categoria: "skins", descripcion: "Skin | NgArtStudio." }
-
+            { archivo: "skin_vikki_slim.gltf", titulo: "Skin Vikki", categoria: "skins", descripcion: "Skin | NgArtStudio." },
+            { archivo: "nevera.gltf", titulo: "nevera industrial", categoria: "bloque", descripcion: "Nevera Industrial | NgArtStudio." },
+            { archivo: "cocina.gltf", titulo: "Meson de Cocina", categoria: "bloque", descripcion: "MODELO | NgArtStudio." }
         ];
+
+        const bgAudio = new Audio('bg.ogg');
+        bgAudio.loop = true;
+
+        // Arreglo con los 3 sonidos posibles para los botones
+        const buttonSounds = [
+            new Audio('Buttom1.ogg'),
+            new Audio('Buttom2.ogg'),
+            new Audio('Buttom3.ogg')
+        ];
+
+        function playClickSound() {
+            // Selecciona un índice aleatorio del 0 al 2
+            const randomIndex = Math.floor(Math.random() * buttonSounds.length);
+            const sound = buttonSounds[randomIndex];
+            sound.currentTime = 0;
+            sound.play().catch(() => {});
+        }
+
+        // Iniciar audio de fondo al interactuar por primera vez con la página
+        function startBgMusic() {
+            bgAudio.play().then(() => {
+                window.removeEventListener('click', startBgMusic);
+                window.removeEventListener('keydown', startBgMusic);
+                window.removeEventListener('touchstart', startBgMusic);
+            }).catch(() => {});
+        }
+        window.addEventListener('click', startBgMusic);
+        window.addEventListener('keydown', startBgMusic);
+        window.addEventListener('touchstart', startBgMusic);
 
         const catalogoCompleto = MIS_MODELOS.map((m, index) => ({ id: `model-${index}`, title: m.titulo, category: m.categoria, description: m.descripcion, fileUrl: m.archivo }));
         let activeModelIndex = 0, animationsList = [], currentAnimationIndex = 0, isAnimationPlaying = true;
         
         const viewer = document.getElementById('viewer'), 
               loaderOverlay = document.getElementById('loader-overlay'), 
-              activeCategoryLabel = document.getElementById('active-category-label'), 
-              activeDescriptionText = document.getElementById('active-description-text'), 
+              descModalTitle = document.getElementById('desc-modal-title'), 
+              descModalCategory = document.getElementById('desc-modal-category'), 
+              descModalText = document.getElementById('desc-modal-text'), 
+              descOverlay = document.getElementById('desc-overlay'),
               viewerCurr = document.getElementById('viewer-curr'), 
               mainViewerContainer = document.getElementById('main-viewer-container'),
               catalogOverlay = document.getElementById('catalog-overlay'), 
@@ -208,14 +426,23 @@
 
         window.onload = () => { viewer.addEventListener('load', onModelLoaded); loadModel(0); renderCatalogGrid(); };
         
+        function toggleDescModal(show) {
+            descOverlay.classList.toggle('hidden', !show);
+        }
+
         function loadModel(index) {
             activeModelIndex = index; const model = catalogoCompleto[index]; 
             loaderOverlay.classList.remove('opacity-0', 'hidden'); 
             viewer.src = model.fileUrl; 
             viewerCurr.src = model.fileUrl;
-            activeCategoryLabel.innerText = model.category; 
-            activeDescriptionText.innerText = model.description; 
+            descModalTitle.innerText = `"${model.title}"`; 
+            descModalCategory.innerText = `"${model.category}"`; 
+            descModalText.innerText = `"${model.description}"`; 
             
+            // Re-aplicar el modo de luz seleccionado al cargar un nuevo modelo
+            const currentMode = LIGHTING_MODES[currentLightIndex];
+            applyLightingMode(currentMode);
+
             mainViewerContainer.classList.add('carousel-fade');
             setTimeout(() => mainViewerContainer.classList.remove('carousel-fade'), 600);
         }
@@ -261,12 +488,17 @@
         
         function renderCatalogGrid() {
             const query = searchInput.value.toLowerCase(), categoryValue = categoryFilter.value;
-            const filtrados = catalogoCompleto.filter(m => (m.title.toLowerCase().includes(query) || m.description.toLowerCase().includes(query)) && (categoryValue === 'all' || m.category === categoryValue));
+            // Filtro excluye cualquier modelo con categoría "nada"
+            const filtrados = catalogoCompleto.filter(m => 
+                m.category !== 'nada' && 
+                (m.title.toLowerCase().includes(query) || m.description.toLowerCase().includes(query)) && 
+                (categoryValue === 'all' || m.category === categoryValue)
+            );
             catalogGrid.innerHTML = '';
             filtrados.forEach(model => {
                 const realIndex = catalogoCompleto.findIndex(m => m.id === model.id);
                 const card = document.createElement('button');
-                card.onclick = () => { loadModel(realIndex); toggleCatalog(false); };
+                card.onclick = () => { playClickSound(); loadModel(realIndex); toggleCatalog(false); };
                 card.className = `aspect-square rounded-[1.5rem] sm:rounded-[2rem] flex flex-col items-center justify-center p-2 sm:p-3 smooth-transition border-[2px] sm:border-[3px] border-transparent bg-darkbg hover:border-accent hover:scale-105 active:scale-95`;
                 card.innerHTML = `<div class="w-full h-full flex items-center justify-center overflow-hidden"><model-viewer src="${model.fileUrl}" auto-rotate interaction-prompt="none" disable-zoom disable-pan></model-viewer></div><span class="text-[10px] sm:text-xs font-black tracking-wider text-accent uppercase">${model.category}</span><h4 class="text-xs sm:text-sm font-bold text-whitepure text-center truncate w-full px-1">${model.title}</h4>`;
                 catalogGrid.appendChild(card);
@@ -274,6 +506,186 @@
         }
         
         function filterCatalog() { renderCatalogGrid(); }
+
+        function spawnJellyParticles(e, btn) {
+            const rect = btn.getBoundingClientRect();
+            const centerX = e.clientX || (rect.left + rect.width / 2);
+            const centerY = e.clientY || (rect.top + rect.height / 2);
+
+            const colors = ['#a9d9e5', '#ffffff', '#11302f', '#56b8d0', '#6ee7b7'];
+            const particleCount = 12;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'jelly-particle';
+                const size = Math.floor(Math.random() * 6) + 5; // 5px - 10px
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                const angle = (i / particleCount) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+                const distance = Math.random() * 40 + 25; // 25px - 65px
+                const dx = Math.cos(angle) * distance + 'px';
+                const dy = Math.sin(angle) * distance + 'px';
+
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = color;
+                particle.style.left = `${centerX - size / 2}px`;
+                particle.style.top = `${centerY - size / 2}px`;
+                particle.style.setProperty('--dx', dx);
+                particle.style.setProperty('--dy', dy);
+                particle.style.boxShadow = `0 0 10px ${color}`;
+
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 600);
+            }
+        }
+
+        // Detectar clics en cualquier botón con la clase hover-jelly
+        document.addEventListener('click', (e) => {
+            const jellyBtn = e.target.closest('.hover-jelly');
+            if (jellyBtn) {
+                spawnJellyParticles(e, jellyBtn);
+            }
+        });
+
+        // Lógica del Cursor Personalizado y Efectos Canvas (pixel-retro)
+        const cursorDot = document.getElementById('cursor-dot');
+        const cursorRing = document.getElementById('cursor-ring');
+        const fxCanvas = document.getElementById('fx-canvas');
+        const ctx = fxCanvas ? fxCanvas.getContext('2d') : null;
+
+        let mouseX = -100, mouseY = -100;
+        let ringX = -100, ringY = -100;
+        let particles = [];
+        let currentHoverTarget = null;
+
+        function resizeFxCanvas() {
+            if (!fxCanvas) return;
+            fxCanvas.width = window.innerWidth;
+            fxCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeFxCanvas);
+        resizeFxCanvas();
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            if (cursorDot) {
+                cursorDot.style.left = `${mouseX}px`;
+                cursorDot.style.top = `${mouseY}px`;
+            }
+
+            if (Math.random() < 0.5) {
+                spawnPixelParticle(mouseX, mouseY);
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            for (let i = 0; i < 10; i++) {
+                spawnPixelParticle(e.clientX, e.clientY, true);
+            }
+        });
+
+        function spawnPixelParticle(x, y, isBurst = false) {
+            const colors = ['#a9d9e5', '#ffffff', '#56b8d0', '#09201f'];
+            const size = isBurst ? Math.floor(Math.random() * 4) + 3 : Math.floor(Math.random() * 3) + 2;
+            const speed = isBurst ? (Math.random() * 3.5 + 1) : (Math.random() * 1.2 + 0.2);
+            const angle = Math.random() * Math.PI * 2;
+
+            particles.push({
+                x: x + (Math.random() * 6 - 3),
+                y: y + (Math.random() * 6 - 3),
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: size,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 1.0,
+                decay: Math.random() * 0.04 + 0.025
+            });
+        }
+
+        function updateCursorFx() {
+            if (currentHoverTarget && document.body.contains(currentHoverTarget)) {
+                const rect = currentHoverTarget.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0 && rect.width < 320 && rect.height < 320) {
+                    const style = window.getComputedStyle(currentHoverTarget);
+                    const targetX = rect.left + rect.width / 2;
+                    const targetY = rect.top + rect.height / 2;
+
+                    ringX += (targetX - ringX) * 0.25;
+                    ringY += (targetY - ringY) * 0.25;
+
+                    if (cursorRing) {
+                        cursorRing.style.width = `${rect.width + 6}px`;
+                        cursorRing.style.height = `${rect.height + 6}px`;
+                        cursorRing.style.borderRadius = style.borderRadius;
+                    }
+                } else {
+                    ringX += (mouseX - ringX) * 0.22;
+                    ringY += (mouseY - ringY) * 0.22;
+                    if (cursorRing) {
+                        cursorRing.style.width = '48px';
+                        cursorRing.style.height = '48px';
+                        cursorRing.style.borderRadius = '50%';
+                    }
+                }
+            } else {
+                ringX += (mouseX - ringX) * 0.22;
+                ringY += (mouseY - ringY) * 0.22;
+
+                if (cursorRing) {
+                    cursorRing.style.width = '32px';
+                    cursorRing.style.height = '32px';
+                    cursorRing.style.borderRadius = '50%';
+                }
+            }
+
+            if (cursorRing) {
+                cursorRing.style.left = `${ringX}px`;
+                cursorRing.style.top = `${ringY}px`;
+            }
+
+            if (ctx && fxCanvas) {
+                ctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+                
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= p.decay;
+
+                    if (p.life <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life;
+                    ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+                }
+                ctx.globalAlpha = 1.0;
+            }
+
+            requestAnimationFrame(updateCursorFx);
+        }
+        requestAnimationFrame(updateCursorFx);
+
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('button, a, input, select, model-viewer, .hover-jelly');
+            if (target) {
+                currentHoverTarget = target;
+                cursorRing?.classList.add('active');
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('button, a, input, select, model-viewer, .hover-jelly');
+            if (target && target === currentHoverTarget) {
+                currentHoverTarget = null;
+                cursorRing?.classList.remove('active');
+            }
+        });
     </script>
 </body>
 </html>

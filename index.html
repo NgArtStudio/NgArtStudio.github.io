@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NgArtStudio</title>
+    <link rel="icon" href="ngnormalicon.ico">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#060a0c', 
+                        panelbg: '#09201f', 
+                        accent: '#a9d9e5', 
+                        whitepure: '#ffffff'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Three.js & GLTFLoader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- FUENTES LOCALES LOUIS GEORGE CAFE --- */
+        @font-face {
+            font-family: 'LouisGeorgeCafe';
+            src: url('Louis George Cafe.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'LouisGeorgeCafe';
+            src: url('Louis George Cafe Bold.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'LouisGeorgeCafe', sans-serif;
+            background-color: #222222;
+            background-image: url('bgprincipal.svg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .font-custom-bold {
+            font-family: 'LouisGeorgeCafe', sans-serif;
+            font-weight: bold;
+        }
+
+        .font-pixel {
+            font-family: 'LouisGeorgeCafe', sans-serif;
+            font-weight: bold;
+        }
+
+        #canvas-container {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #canvas-container:hover {
+            transform: scale(1.03);
+        }
+
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-hidden {
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+        }
+        .modal-visible {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        @keyframes logoEntrance {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) rotate(-15deg);
+                filter: blur(8px);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.08) rotate(3deg);
+                filter: blur(0px);
+            }
+            80% {
+                transform: scale(0.96) rotate(-1deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+                filter: blur(0px);
+            }
+        }
+
+        @keyframes logoFloat {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-8px) rotate(0.5deg);
+            }
+        }
+
+        .hero-logo-animated {
+            animation: logoEntrance 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+                       logoFloat 5s ease-in-out 1.2s infinite;
+        }
+
+        @keyframes jellyHover {
+            0% { transform: scale(1, 1); }
+            30% { transform: scale(1.15, 0.88); }
+            45% { transform: scale(0.9, 1.1); }
+            60% { transform: scale(1.05, 0.95); }
+            75% { transform: scale(0.98, 1.02); }
+            100% { transform: scale(1, 1); }
+        }
+
+        @keyframes jellyClick {
+            0% { transform: scale(1, 1); }
+            20% { transform: scale(0.82, 1.18); }
+            40% { transform: scale(1.15, 0.85); }
+            65% { transform: scale(0.95, 1.05); }
+            80% { transform: scale(1.02, 0.98); }
+            100% { transform: scale(1, 1); }
+        }
+
+        .btn-jelly {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease-out, color 0.2s ease;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .btn-jelly:hover {
+            animation: jellyHover 0.65s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .btn-jelly:active {
+            animation: jellyClick 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .bg-checkerboard-dark {
+            background-color: #0a0a0a;
+            background-image: 
+                linear-gradient(45deg, #181818 25%, transparent 25%), 
+                linear-gradient(-45deg, #181818 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #181818 75%), 
+                linear-gradient(-45deg, transparent 75%, #181818 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+        }
+
+        .bg-checkerboard-light {
+            background-color: #f0f0f0;
+            background-image: 
+                linear-gradient(45deg, #d8d8d8 25%, transparent 25%), 
+                linear-gradient(-45deg, #d8d8d8 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #d8d8d8 75%), 
+                linear-gradient(-45deg, transparent 75%, #d8d8d8 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            touch-action: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #222222;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffffff;
+        }
+
+        .fade-transition {
+            transition: opacity 0.35s ease-in-out, transform 0.35s ease-in-out;
+        }
+        .fade-out {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        .fade-in {
+            opacity: 1;
+            transform: translateY(0px);
+        }
+
+        /* --- CONFIGURACIÓN DE ESTILOS Y EFECTOS --- */
+        .smooth-transition { transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* Radar con paleta del sitio */
+        @keyframes radar {
+            0% { box-shadow: 0 0 0 0 rgba(169, 217, 229, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(169, 217, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(169, 217, 229, 0); }
+        }
+        .animate-radar { animation: radar 2s infinite; }
+
+        /* Jelatina adicional */
+        @keyframes jelly {
+            0%, 100% { transform: scale(1, 1); }
+            30% { transform: scale(1.25, 0.75); }
+            40% { transform: scale(0.75, 1.25); }
+            50% { transform: scale(1.15, 0.85); }
+            65% { transform: scale(0.95, 1.05); }
+            75% { transform: scale(1.05, 0.95); }
+        }
+        .hover-jelly:hover { animation: jelly 0.6s ease; }
+
+        @keyframes jelly-click {
+            0% { transform: scale(1, 1); }
+            25% { transform: scale(0.65, 1.35) rotate(-4deg); }
+            50% { transform: scale(1.3, 0.7) rotate(4deg); }
+            75% { transform: scale(0.85, 1.15); }
+            100% { transform: scale(1, 1); }
+        }
+        .hover-jelly:active { animation: jelly-click 0.45s ease-out !important; }
+
+        /* Estilo para las partículas flotantes del botón */
+        .jelly-particle {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: floatParticle 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            z-index: 9999;
+        }
+        @keyframes floatParticle {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2); }
+        }
+
+        /* Cursor personalizado (pixel-retro) */
+        @media (min-width: 768px) {
+            * { cursor: none !important; }
+        }
+        
+        #cursor-dot {
+            position: fixed;
+            top: 0; left: 0;
+            width: 6px; height: 6px;
+            background-color: #a9d9e5;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 8px #a9d9e5, 0 0 2px #ffffff;
+            image-rendering: pixelated;
+        }
+
+        #cursor-ring {
+            position: fixed;
+            top: 0; left: 0;
+            width: 32px; height: 32px;
+            border: 2px dashed #a9d9e5;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s ease-out, height 0.2s ease-out, border-color 0.2s, background-color 0.2s, border-radius 0.2s ease-out;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 8px rgba(169, 217, 229, 0.2);
+        }
+
+        #cursor-ring.active {
+            border-style: solid;
+            border-color: #ffffff;
+            background-color: rgba(169, 217, 229, 0.15);
+            box-shadow: 0 0 12px rgba(169, 217, 229, 0.4), inset 0 0 8px rgba(169, 217, 229, 0.3);
+        }
+
+        #fx-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 9997;
+        }
+    </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between select-none bg-[#222222]">
+
+    <!-- Elementos del Cursor Personalizado y Efectos -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- Bottom Left Floating Contact Button -->
+    <div class="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40">
+        <a href="https://linktr.ee/NgArtStudio?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGnV4mzcu8P_XDdrBtgGGk0hkyLR4ssJVvBcr8YJSyJLt8Hv6P3fMCS5qmKuLM_aem_DIDWflWZFxw84mcZ9biTSA" target="_blank" onclick="playClickSound()" class="w-10 h-10 sm:w-14 sm:h-14 bg-whitepure p-2 sm:p-2.5 rounded-2xl animate-radar flex items-center justify-center smooth-transition hover:scale-105 active:scale-95 shrink-0" title="Contacto">
+            <img src="contacto.svg" alt="Contacto" class="w-full h-full object-contain" onerror="this.onerror=null; this.outerHTML='<svg class=\'w-full h-full text-accent p-1.5 object-contain hover:text-whitepure smooth-transition\' fill=\'currentColor\' viewBox=\'0 0 24 24\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z\'/></svg>';">
+        </a>
+    </div>
+
+    <!-- Top Right Floating Action Buttons -->
+    <div class="fixed top-4 right-4 sm:top-6 sm:right-6 z-40 flex flex-col items-center gap-3 sm:gap-5">
+        <button id="btn-bell" title="Noticias y Notificaciones" class="btn-jelly text-white hover:text-gray-300 cursor-pointer relative bg-transparent border-none p-2 sm:p-0 focus:outline-none">
+            <i class="fa-solid fa-bell text-2xl sm:text-3xl"></i>
+            <span class="absolute top-1 right-1 sm:-top-1 sm:-right-1 w-2.5 h-2.5 bg-cyan-400 rounded-full"></span>
+        </button>
+
+        <button id="btn-pencil" title="Pixel Art Studio" class="btn-jelly text-white hover:text-gray-300 cursor-pointer bg-transparent border-none p-2 sm:p-0 focus:outline-none">
+            <i class="fa-solid fa-paint-brush text-2xl sm:text-3xl"></i>
+        </button>
+    </div>
+
+    <!-- Hero Main Section -->
+    <main class="relative z-10 flex-1 flex flex-col items-center justify-between pt-10 sm:pt-14 pb-6 sm:pb-8 px-4 text-center min-h-screen w-full">
+        <div></div>
+
+        <div class="flex flex-col items-center justify-center my-auto">
+            <!-- Small Brand Text Above Logo -->
+            <span class="font-custom-bold text-xs sm:text-sm tracking-[0.35em] text-white uppercase mb-6 sm:mb-8 font-semibold">
+                N g A r t S t u d i o
+            </span>
+
+            <!-- Main Interactive Logo -->
+            <div class="relative group cursor-pointer hero-logo-animated">
+                <div class="relative w-36 h-36 sm:w-[220px] sm:h-[220px] md:w-[280px] md:h-[280px] lg:w-[340px] lg:h-[340px] flex items-center justify-center">
+                    <img src="iconong.svg" alt="Logo Principal" class="w-full h-full object-contain" onerror="this.style.display='none'; document.getElementById('fallback-svg-logo').style.display='block';">
+                    
+                    <svg id="fallback-svg-logo" class="w-full h-full hidden" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 230 40 C 310 35, 380 70, 410 130 C 435 180, 420 220, 440 270 C 465 330, 420 410, 350 435 C 280 460, 190 440, 130 400 C 70 360, 40 290, 55 210 C 68 135, 150 45, 230 40 Z" fill="white" stroke="white" stroke-width="12"/>
+                        <path d="M 235 60 C 300 58, 360 90, 385 142 C 405 185, 395 215, 412 260 C 430 310, 395 380, 335 402 C 275 424, 198 410, 145 375 C 92 340, 68 280, 80 212 C 92 148, 170 62, 235 60 Z" fill="#071213" />
+                        <g fill="white">
+                            <path d="M 140 160 L 180 160 L 180 240 L 230 160 L 270 160 L 270 320 L 230 320 L 230 230 L 180 320 L 140 320 Z"/>
+                            <path d="M 290 160 L 380 160 L 380 200 L 330 200 L 330 280 L 380 280 L 380 230 L 345 230 L 345 200 L 415 200 L 415 320 L 290 320 Z"/>
+                        </g>
+                        <path d="M 425 295 C 440 295, 450 310, 445 325 C 440 340, 420 340, 415 325 C 410 310, 410 295, 425 295 Z" fill="white"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Slogan Below Logo -->
+            <p class="font-custom-bold text-xs sm:text-base md:text-lg text-white tracking-wider font-medium mt-6 sm:mt-8 max-w-lg">
+                Donde la creatividad no tiene límites
+            </p>
+        </div>
+
+        <div class="mb-4 sm:mb-6 text-white text-xs tracking-widest flex flex-col items-center gap-2 opacity-80 animate-bounce cursor-pointer btn-jelly" onclick="document.getElementById('pc-window').scrollIntoView({behavior: 'smooth'});">
+            <i class="fa-solid fa-chevron-down text-base sm:text-lg"></i>
+        </div>
+    </main>
+
+    <!-- 3D Interactive Services Window -->
+    <section class="relative z-10 w-full max-w-6xl mx-auto px-2 sm:px-4 pb-12 sm:pb-20 pt-6 sm:pt-12 flex items-center justify-center">
+        <div id="pc-window" class="w-full max-w-6xl bg-[#0a0a0a] rounded-2xl sm:rounded-[24px] flex flex-col overflow-hidden transition-all duration-300 min-h-[520px] sm:min-h-[640px] border border-white/5 shadow-2xl">
+            <div class="h-10 sm:h-12 px-4 sm:px-6 bg-[#161616] flex items-center justify-end select-none">
+                <div class="flex items-center space-x-2 sm:space-x-2.5">
+                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-cyan-400"></div>
+                </div>
+            </div>
+
+            <div id="window-content" class="flex-1 p-4 sm:p-10 bg-[#0a0a0a] relative flex flex-col items-center justify-between">
+                <h2 class="font-custom-bold text-xl sm:text-3xl md:text-4xl text-white font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase my-2 sm:my-4 text-center">
+                    SERVICIOS
+                </h2>
+
+                <div class="relative w-full flex items-center justify-between my-2 sm:my-4 min-h-[260px] sm:min-h-[380px]">
+                    <button id="btn-prev-model" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                        <i class="fa-solid fa-caret-left text-3xl sm:text-6xl"></i>
+                    </button>
+
+                    <div class="relative flex-1 flex flex-col items-center justify-center gap-3 sm:gap-4">
+                        
+                        <!-- CONTENEDOR DEL MODELO 3D -->
+                        <div id="canvas-container" class="w-48 h-48 sm:w-80 sm:h-80 md:w-96 md:h-96 relative flex items-center justify-center rounded-2xl max-w-full group" title="Hacer clic para abrir enlace">
+                            
+                            <!-- Canvas 3D de Three.js -->
+                            <canvas id="three-canvas" class="w-full h-full rounded-2xl pointer-events-none"></canvas>
+                            
+                            <!-- CUADRO INVISIBLE ENCIMA QUE RECIBE EL CLIC -->
+                            <div id="model-click-overlay" class="absolute inset-0 z-30 cursor-pointer rounded-2xl bg-transparent"></div>
+                        
+                        </div>
+
+                        <button id="btn-des" title="Ver descripción del modelo" class="btn-jelly mt-1 sm:mt-2 cursor-pointer bg-transparent border-none focus:outline-none flex items-center justify-center z-30">
+                            <img src="des.svg" alt="Descripción" class="w-8 h-8 sm:w-12 sm:h-12 object-contain" onerror="this.style.display='none'; document.getElementById('fallback-des-svg').style.display='block';">
+                            <svg id="fallback-des-svg" class="w-8 h-8 sm:w-12 sm:h-12 hidden" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="24" cy="24" r="20" stroke="#ffffff" stroke-width="3" fill="#07181a"/>
+                                <path d="M24 14V26M24 32H24.02" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <button id="btn-next-model" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                        <i class="fa-solid fa-caret-right text-3xl sm:text-6xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODEL DETAILS POPUP MODAL -->
+    <div id="modal-des" class="modal modal-hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="relative w-full max-w-md bg-[#0a0a0a] border border-white/20 rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 text-center flex flex-col items-center justify-center">
+            <button id="close-modal-des" class="btn-jelly absolute top-5 right-5 text-gray-400 hover:text-white cursor-pointer focus:outline-none text-xl p-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="des-title" class="fade-transition font-pixel text-xs sm:text-base text-white tracking-widest mt-2 mb-4 leading-relaxed">"NgArtStudio"</h3>
+            <div id="des-badge" class="fade-transition inline-block bg-white text-[#0a0a0a] font-pixel text-[10px] sm:text-xs px-4 sm:px-5 py-1.5 rounded-full font-bold mb-5 sm:mb-6">"MODELADO 3D"</div>
+            <p id="des-text" class="fade-transition font-pixel text-[11px] sm:text-sm text-white leading-loose tracking-wide max-w-xs mb-6">"Bienvenido al Portafolio de NgArtStudio."</p>
+
+            <a id="des-link" href="#" target="_blank" class="btn-jelly bg-cyan-400 hover:bg-cyan-300 text-black font-pixel text-xs px-6 py-2.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-2">
+                <span>VISITAR ENLACE</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- NOTIFICATIONS & NEWS POPUP MODAL -->
+    <div id="modal-bell" class="modal modal-hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="relative w-full max-w-md bg-[#0a0a0a] border border-white/20 rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 text-center flex flex-col items-center justify-center">
+            <button id="close-modal-bell" class="btn-jelly absolute top-5 right-5 text-gray-400 hover:text-white cursor-pointer focus:outline-none text-xl p-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="font-pixel text-xs sm:text-base text-white tracking-widest mt-2 mb-3 leading-relaxed">"NOTICIAS"</h3>
+            <div class="inline-block bg-white text-[#0a0a0a] font-pixel text-[10px] sm:text-xs px-4 sm:px-5 py-1.5 rounded-full font-bold mb-5">"NOTIFICACIONES"</div>
+            <div class="w-full space-y-3 max-h-[45vh] overflow-y-auto pr-1 text-left font-pixel">
+                <div class="p-3.5 sm:p-4 rounded-[18px] bg-[#161616] transition-all">
+                    <div class="flex items-center justify-between text-[9px] sm:text-[10px] text-gray-400 mb-2 font-bold">
+                        <span>"NOVEDADES"</span>
+                        <span>"HOY"</span>
+                    </div>
+                    <h4 class="text-[11px] sm:text-xs text-white font-bold mb-1 tracking-wide">"¡Bienvenidos a NgArtStudio!"</h4>
+                    <p class="text-[10px] sm:text-[11px] text-gray-300 leading-relaxed">"Estamos estrenando nuestro nuevo espacio interactivo 3D y Pixel Art Studio. Crea tu propio arte pixelado directamente en la web."</p>
+                </div>
+            </div>
+            <button id="btn-close-bell-action" class="btn-jelly mt-5 bg-white hover:bg-gray-200 text-[#0a0a0a] font-pixel text-xs px-6 py-2.5 rounded-full font-bold cursor-pointer">"ENTENDIDO"</button>
+        </div>
+    </div>
+
+    <!-- PIXEL ART STUDIO POPUP MODAL -->
+    <div id="modal-pencil" class="modal modal-hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/80 backdrop-blur-md">
+        
+        <div id="pixel-studio-window" class="w-full max-w-6xl bg-[#0a0a0a] rounded-[24px] shadow-2xl flex flex-col overflow-hidden transition-all duration-300 min-h-[640px] relative border border-white/10">
+            
+            <button id="close-modal-pencil" class="btn-jelly absolute top-2.5 right-4 z-50 text-gray-400 hover:text-white cursor-pointer p-1.5 rounded-lg hover:bg-[#222222]" title="Cerrar ventana">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="h-12 px-6 bg-[#161616] flex items-center justify-end select-none pr-14">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-10 h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                    <div class="w-10 h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                    <div class="w-10 h-2.5 rounded-full bg-white"></div>
+                </div>
+            </div>
+
+            <div id="window-content-pixel" class="flex flex-col md:flex-row p-4 gap-4 bg-[#0a0a0a] flex-1 min-h-[580px] relative">
+                
+                <div class="w-full md:w-36 bg-transparent flex flex-row md:flex-col justify-between items-center py-2 px-1 gap-4 overflow-y-auto shrink-0 select-none">
+                    
+                    <div class="flex flex-row md:flex-col items-center gap-5 w-full justify-around md:justify-start">
+                        
+                        <div class="grid grid-cols-2 gap-2.5 w-24 md:w-full px-1">
+                            <button id="tool-pencil" class="btn-jelly tool-btn active p-2.5 rounded-xl bg-transparent text-white flex items-center justify-center group outline-none relative cursor-pointer" title="Pincel (P)">
+                                <i data-lucide="pencil" class="w-5 h-5 stroke-[2]"></i>
+                                <div class="active-indicator absolute -bottom-1 w-1.5 h-1.5 bg-white rounded-full"></div>
+                            </button>
+                            
+                            <button id="tool-eraser" class="btn-jelly tool-btn p-2.5 rounded-xl bg-transparent text-gray-400 flex items-center justify-center group outline-none relative cursor-pointer" title="Borrador (E)">
+                                <i data-lucide="eraser" class="w-5 h-5 stroke-[2]"></i>
+                                <div class="active-indicator absolute -bottom-1 w-1.5 h-1.5 bg-white rounded-full hidden"></div>
+                            </button>
+
+                            <button id="tool-picker" class="btn-jelly tool-btn p-2.5 rounded-xl bg-transparent text-gray-400 flex items-center justify-center group outline-none relative cursor-pointer" title="Cuentagotas (I)">
+                                <i data-lucide="pipette" class="w-5 h-5 stroke-[2]"></i>
+                                <div class="active-indicator absolute -bottom-1 w-1.5 h-1.5 bg-white rounded-full hidden"></div>
+                            </button>
+
+                            <button id="tool-zoom" class="btn-jelly tool-btn p-2.5 rounded-xl bg-transparent text-gray-400 flex items-center justify-center group outline-none relative cursor-pointer" title="Lupa / Zoom (Z)">
+                                <i data-lucide="search" class="w-5 h-5 stroke-[2]"></i>
+                                <div class="active-indicator absolute -bottom-1 w-1.5 h-1.5 bg-white rounded-full hidden"></div>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col items-center w-full px-1">
+                            <div class="flex flex-row items-center justify-between w-full gap-1.5 bg-transparent p-0 rounded-xl">
+                                <div class="relative w-20 h-20 rounded-lg overflow-hidden cursor-crosshair">
+                                    <canvas id="sat-val-canvas" width="80" height="80" class="w-full h-full block"></canvas>
+                                    <div id="sat-val-picker" class="absolute w-2.5 h-2.5 border-2 border-white bg-black/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow" style="top: 0%; left: 100%;"></div>
+                                </div>
+                                
+                                <div class="relative w-3.5 h-20 rounded-lg overflow-hidden cursor-pointer">
+                                    <canvas id="hue-canvas" width="14" height="80" class="w-full h-full block"></canvas>
+                                    <div id="hue-picker" class="absolute w-full h-1 bg-white left-0 -translate-y-1/2 pointer-events-none shadow-sm" style="top: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between w-full mt-2 px-1">
+                                <div id="current-color-preview" class="w-6 h-6 rounded-md shadow" style="background-color: #ffffff;" title="Color Actual"></div>
+                                
+                                <button id="btn-chromatic-modal" class="btn-jelly p-1 rounded-md text-gray-400 hover:text-white text-xs flex items-center gap-1 outline-none cursor-pointer" title="Ver rueda cromática">
+                                    <i data-lucide="palette" class="w-4 h-4 text-white"></i>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-5 gap-1.5 w-full mt-2" id="palette-container"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="flex items-center justify-center py-1">
+                        <div class="btn-jelly w-10 h-10 rounded-full bg-transparent flex items-center justify-center cursor-pointer group relative" title="ngillustrator">
+                            <img src="ngilustrator.svg" alt="ngillustrator" class="w-8 h-8 object-contain" onerror="this.onerror=null; this.src='https://placehold.co/32x32/0a0a0a/ffffff?text=NG';">
+                        </div>
+                    </div>
+
+                    <div class="w-full flex justify-center pb-1">
+                        <button id="btn-download" class="btn-jelly p-2.5 rounded-xl bg-transparent text-gray-400 hover:text-white flex items-center justify-center cursor-pointer outline-none" title="Descargar PNG">
+                            <i data-lucide="download" class="w-6 h-6 stroke-[2]"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="flex-1 bg-checkerboard-dark rounded-[20px] flex flex-col overflow-hidden relative shadow-inner transition-colors duration-200" id="viewport-container">
+                    
+                    <div class="absolute top-4 right-4 z-30 flex items-center gap-2 bg-[#0a0a0a]/80 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-white/10">
+                        <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-300"></i>
+                        <button id="canvas-theme-toggle" class="btn-jelly w-8 h-4 bg-[#222222] rounded-full p-0.5 focus:outline-none flex items-center relative cursor-pointer outline-none" title="Fondo Claro/Oscuro">
+                            <div id="theme-switch-dot" class="w-3 h-3 rounded-full bg-white shadow-sm transform translate-x-4 transition-transform duration-200"></div>
+                        </button>
+                        <i data-lucide="moon" class="w-3.5 h-3.5 text-white"></i>
+                    </div>
+
+                    <div id="viewport" class="flex-1 relative overflow-hidden flex items-center justify-center p-4 select-none touch-none">
+                        
+                        <div class="absolute bottom-4 right-4 bg-[#0a0a0a]/80 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-2.5 z-20 shadow-xl text-white text-xs border border-white/10">
+                            <button id="zoom-out" class="btn-jelly hover:text-white outline-none cursor-pointer" title="Alejar (-)">
+                                <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                            </button>
+                            <span id="zoom-percentage" class="font-mono text-[11px] text-white min-w-[36px] text-center font-bold">100%</span>
+                            <button id="zoom-in" class="btn-jelly hover:text-white outline-none cursor-pointer" title="Acercar (+)">
+                                <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                            </button>
+                            <button id="zoom-reset" class="btn-jelly hover:text-white ml-1 outline-none cursor-pointer" title="Restablecer">
+                                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+
+                        <div class="absolute bottom-4 left-4 bg-[#0a0a0a]/80 backdrop-blur-md rounded-full px-3.5 py-1.5 flex items-center gap-3 z-20 shadow-xl text-white text-xs border border-white/10">
+                            <div class="relative flex items-center">
+                                <select id="grid-size-select" class="bg-[#161616] text-white font-semibold focus:outline-none cursor-pointer text-xs rounded-full px-3 py-1 appearance-none pr-7 text-center hover:bg-[#222222]">
+                                    <option value="8" class="bg-[#0a0a0a] text-white">8 x 8</option>
+                                    <option value="12" class="bg-[#0a0a0a] text-white">12 x 12</option>
+                                    <option value="16" selected class="bg-[#0a0a0a] text-white">16 x 16</option>
+                                    <option value="20" class="bg-[#0a0a0a] text-white">20 x 20</option>
+                                    <option value="24" class="bg-[#0a0a0a] text-white">24 x 24</option>
+                                    <option value="32" class="bg-[#0a0a0a] text-white">32 x 32</option>
+                                    <option value="48" class="bg-[#0a0a0a] text-white">48 x 48</option>
+                                    <option value="64" class="bg-[#0a0a0a] text-white">64 x 64</option>
+                                    <option value="96" class="bg-[#0a0a0a] text-white">96 x 96</option>
+                                    <option value="128" class="bg-[#0a0a0a] text-white">128 x 128</option>
+                                </select>
+                                <div class="pointer-events-none absolute right-2 flex items-center text-white">
+                                    <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                                </div>
+                            </div>
+
+                            <div class="w-[1px] h-3 bg-[#222222]"></div>
+
+                            <button id="btn-toggle-grid" class="btn-jelly hover:text-white outline-none flex items-center gap-1 cursor-pointer" title="Cuadrícula">
+                                <i data-lucide="grid" class="w-3.5 h-3.5"></i>
+                            </button>
+
+                            <button id="btn-undo" class="btn-jelly hover:text-white disabled:opacity-30 outline-none cursor-pointer" title="Deshacer (Ctrl+Z)">
+                                <i data-lucide="undo" class="w-3.5 h-3.5"></i>
+                            </button>
+
+                            <button id="btn-redo" class="btn-jelly hover:text-white disabled:opacity-30 outline-none cursor-pointer" title="Rehacer (Ctrl+Y)">
+                                <i data-lucide="redo" class="w-3.5 h-3.5"></i>
+                            </button>
+
+                            <button id="btn-clear" class="btn-jelly hover:text-red-400 outline-none cursor-pointer" title="Limpiar Canvas">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+
+                        <div id="canvas-wrapper" class="relative shadow-2xl transition-transform duration-75 origin-center touch-none">
+                            <canvas id="pixel-canvas" class="block rounded-lg cursor-crosshair touch-none"></canvas>
+                            <canvas id="grid-canvas" class="block absolute top-0 left-0 pointer-events-none rounded-lg"></canvas>
+                            <canvas id="cursor-canvas" class="block absolute top-0 left-0 pointer-events-none rounded-lg"></canvas>
+                        </div>
+
+                    </div>
+
+                    <div class="absolute top-4 left-4 z-20 bg-[#0a0a0a]/80 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-mono text-gray-300 select-none border border-white/10">
+                        <span id="cursor-pos-info">X: 0, Y: 0</span>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- CHROMATIC WHEEL POPUP MODAL -->
+    <div id="chromatic-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-[#0a0a0a] rounded-2xl p-5 max-w-sm w-full shadow-2xl flex flex-col items-center border border-white/10">
+            <div class="flex justify-between items-center w-full mb-3">
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2 font-custom-bold">
+                    <i data-lucide="palette" class="w-4 h-4 text-white"></i>
+                    Rueda Cromática
+                </h3>
+                <button id="btn-close-modal" class="btn-jelly text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#222222] outline-none cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="relative w-52 h-52 my-2 cursor-crosshair">
+                <canvas id="color-wheel-canvas" width="208" height="208" class="rounded-full shadow-md"></canvas>
+                <div id="wheel-picker-dot" class="absolute w-3.5 h-3.5 bg-white border-2 border-black rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow" style="top: 50%; left: 50%;"></div>
+            </div>
+
+            <div class="w-full mt-3 flex items-center gap-2 px-1">
+                <i data-lucide="sun" class="w-4 h-4 text-gray-400"></i>
+                <input type="range" id="wheel-lightness" min="0" max="100" value="50" class="w-full accent-white cursor-pointer outline-none">
+            </div>
+
+            <div class="flex items-center justify-between w-full mt-4 pt-3 border-t border-[#181818]">
+                <div class="flex items-center gap-2">
+                    <div id="modal-color-swatch" class="w-7 h-7 rounded-md" style="background-color: #ffffff;"></div>
+                    <span id="modal-color-hex" class="font-mono text-xs text-gray-200">#FFFFFF</span>
+                </div>
+                <button id="btn-apply-modal-color" class="btn-jelly px-4 py-1.5 bg-white text-black font-bold rounded-lg text-xs hover:bg-gray-200 outline-none cursor-pointer font-custom-bold">
+                    Seleccionar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- INTEGRACIÓN DE AUDIO Y EFECTOS DE SONIDO / PARTICULAS ---
+        const bgAudio = new Audio('bg.ogg');
+        bgAudio.loop = true;
+
+        const buttonSounds = [
+            new Audio('Buttom1.ogg'),
+            new Audio('Buttom2.ogg'),
+            new Audio('Buttom3.ogg')
+        ];
+
+        function playClickSound() {
+            const randomIndex = Math.floor(Math.random() * buttonSounds.length);
+            const sound = buttonSounds[randomIndex];
+            sound.currentTime = 0;
+            sound.play().catch(() => {});
+        }
+
+        function startBgMusic() {
+            bgAudio.play().then(() => {
+                window.removeEventListener('click', startBgMusic);
+                window.removeEventListener('keydown', startBgMusic);
+                window.removeEventListener('touchstart', startBgMusic);
+            }).catch(() => {});
+        }
+        window.addEventListener('click', startBgMusic);
+        window.addEventListener('keydown', startBgMusic);
+        window.addEventListener('touchstart', startBgMusic);
+
+        function spawnJellyParticles(e, btn) {
+            const rect = btn.getBoundingClientRect();
+            const centerX = e.clientX || (rect.left + rect.width / 2);
+            const centerY = e.clientY || (rect.top + rect.height / 2);
+
+            const colors = ['#a9d9e5', '#ffffff', '#11302f', '#56b8d0', '#6ee7b7'];
+            const particleCount = 12;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'jelly-particle';
+                const size = Math.floor(Math.random() * 6) + 5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                const angle = (i / particleCount) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+                const distance = Math.random() * 40 + 25;
+                const dx = Math.cos(angle) * distance + 'px';
+                const dy = Math.sin(angle) * distance + 'px';
+
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = color;
+                particle.style.left = `${centerX - size / 2}px`;
+                particle.style.top = `${centerY - size / 2}px`;
+                particle.style.setProperty('--dx', dx);
+                particle.style.setProperty('--dy', dy);
+                particle.style.boxShadow = `0 0 10px ${color}`;
+
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 600);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const jellyBtn = e.target.closest('.hover-jelly, .btn-jelly, button, a');
+            if (jellyBtn) {
+                playClickSound();
+                spawnJellyParticles(e, jellyBtn);
+            }
+        });
+
+        // --- INTEGRACIÓN DE CURSOR RETRO Y CANVAS DE EFECTOS ---
+        const cursorDot = document.getElementById('cursor-dot');
+        const cursorRing = document.getElementById('cursor-ring');
+        const fxCanvas = document.getElementById('fx-canvas');
+        const ctxFx = fxCanvas ? fxCanvas.getContext('2d') : null;
+
+        let mouseX = -100, mouseY = -100;
+        let ringX = -100, ringY = -100;
+        let particles = [];
+        let currentHoverTarget = null;
+
+        function resizeFxCanvas() {
+            if (!fxCanvas) return;
+            fxCanvas.width = window.innerWidth;
+            fxCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeFxCanvas);
+        resizeFxCanvas();
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            if (cursorDot) {
+                cursorDot.style.left = `${mouseX}px`;
+                cursorDot.style.top = `${mouseY}px`;
+            }
+
+            if (Math.random() < 0.5) {
+                spawnPixelParticle(mouseX, mouseY);
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            for (let i = 0; i < 10; i++) {
+                spawnPixelParticle(e.clientX, e.clientY, true);
+            }
+        });
+
+        function spawnPixelParticle(x, y, isBurst = false) {
+            const colors = ['#a9d9e5', '#ffffff', '#56b8d0', '#09201f'];
+            const size = isBurst ? Math.floor(Math.random() * 4) + 3 : Math.floor(Math.random() * 3) + 2;
+            const speed = isBurst ? (Math.random() * 3.5 + 1) : (Math.random() * 1.2 + 0.2);
+            const angle = Math.random() * Math.PI * 2;
+
+            particles.push({
+                x: x + (Math.random() * 6 - 3),
+                y: y + (Math.random() * 6 - 3),
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: size,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 1.0,
+                decay: Math.random() * 0.04 + 0.025
+            });
+        }
+
+        function updateCursorFx() {
+            if (currentHoverTarget && document.body.contains(currentHoverTarget)) {
+                const rect = currentHoverTarget.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0 && rect.width < 320 && rect.height < 320) {
+                    const style = window.getComputedStyle(currentHoverTarget);
+                    const targetX = rect.left + rect.width / 2;
+                    const targetY = rect.top + rect.height / 2;
+
+                    ringX += (targetX - ringX) * 0.25;
+                    ringY += (targetY - ringY) * 0.25;
+
+                    if (cursorRing) {
+                        cursorRing.style.width = `${rect.width + 6}px`;
+                        cursorRing.style.height = `${rect.height + 6}px`;
+                        cursorRing.style.borderRadius = style.borderRadius;
+                    }
+                } else {
+                    ringX += (mouseX - ringX) * 0.22;
+                    ringY += (mouseY - ringY) * 0.22;
+                    if (cursorRing) {
+                        cursorRing.style.width = '48px';
+                        cursorRing.style.height = '48px';
+                        cursorRing.style.borderRadius = '50%';
+                    }
+                }
+            } else {
+                ringX += (mouseX - ringX) * 0.22;
+                ringY += (mouseY - ringY) * 0.22;
+
+                if (cursorRing) {
+                    cursorRing.style.width = '32px';
+                    cursorRing.style.height = '32px';
+                    cursorRing.style.borderRadius = '50%';
+                }
+            }
+
+            if (cursorRing) {
+                cursorRing.style.left = `${ringX}px`;
+                cursorRing.style.top = `${ringY}px`;
+            }
+
+            if (ctxFx && fxCanvas) {
+                ctxFx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+                
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= p.decay;
+
+                    if (p.life <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+
+                    ctxFx.fillStyle = p.color;
+                    ctxFx.globalAlpha = p.life;
+                    ctxFx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+                }
+                ctxFx.globalAlpha = 1.0;
+            }
+
+            requestAnimationFrame(updateCursorFx);
+        }
+        requestAnimationFrame(updateCursorFx);
+
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('button, a, input, select, canvas, .btn-jelly, .hover-jelly');
+            if (target) {
+                currentHoverTarget = target;
+                cursorRing?.classList.add('active');
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('button, a, input, select, canvas, .btn-jelly, .hover-jelly');
+            if (target && target === currentHoverTarget) {
+                currentHoverTarget = null;
+                cursorRing?.classList.remove('active');
+            }
+        });
+
+        // --- CÓDIGO ORIGINAL DE PAGINAPRINCIPALFINAL ---
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+            const openModal = (modalId) => {
+                const el = document.getElementById(modalId);
+                if (el) {
+                    el.classList.remove('modal-hidden');
+                    el.classList.add('modal-visible');
+                    if (modalId === 'modal-pencil') {
+                        setTimeout(() => {
+                            initCanvas();
+                        }, 60);
+                    }
+                }
+            };
+
+            const closeModal = (modalId) => {
+                const el = document.getElementById(modalId);
+                if (el) {
+                    el.classList.remove('modal-visible');
+                    el.classList.add('modal-hidden');
+                }
+            };
+
+            document.getElementById('btn-bell')?.addEventListener('click', () => openModal('modal-bell'));
+            document.getElementById('close-modal-bell')?.addEventListener('click', () => closeModal('modal-bell'));
+            document.getElementById('btn-close-bell-action')?.addEventListener('click', () => closeModal('modal-bell'));
+
+            document.getElementById('btn-pencil')?.addEventListener('click', () => openModal('modal-pencil'));
+            document.getElementById('close-modal-pencil')?.addEventListener('click', () => closeModal('modal-pencil'));
+
+            document.getElementById('btn-des')?.addEventListener('click', () => openModal('modal-des'));
+            document.getElementById('close-modal-des')?.addEventListener('click', () => closeModal('modal-des'));
+
+            // =========================================================
+            // CONFIGURACIÓN DE MODELOS 3D Y ENLACES
+            // =========================================================
+            const modelos3D = [
+                { 
+                    archivo: "ng3dnormallogo3d.glb", 
+                    titulo: "NgArtStudio 3d", 
+                    categoria: "Arte", 
+                    descripcion: "Aqui encontraras mi portafolio de Modelos 3d.",
+                    link: "portafolio3d.html"
+                },
+                { 
+                    archivo: "ngilustratornormallogo3d.glb", 
+                    titulo: "NgArtStudio Logo", 
+                    categoria: "Arte", 
+                    descripcion: "PROXIMAMENTE . . .",
+                    link: "https://www.behance.net/ngartstudio"
+                }
+            ];
+
+            const canvasContainer = document.getElementById('canvas-container');
+            const threeCanvas = document.getElementById('three-canvas');
+            const clickOverlay = document.getElementById('model-click-overlay');
+
+            if (canvasContainer && threeCanvas && typeof THREE !== 'undefined') {
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+                camera.position.set(0, 0, 5);
+
+                const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true, antialias: true });
+                renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                // Luces de la escena 3D
+                const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+                scene.add(ambientLight);
+
+                const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+                dirLight1.position.set(5, 5, 5);
+                scene.add(dirLight1);
+
+                const dirLight2 = new THREE.DirectionalLight(0x888888, 0.8);
+                dirLight2.position.set(-5, -5, -2);
+                scene.add(dirLight2);
+
+                const loadedGroups = [];
+                let currentModelIdx = 0;
+                let isFading = false;
+
+                const loader = new THREE.GLTFLoader();
+
+                modelos3D.forEach((item, index) => {
+                    const outerGroup = new THREE.Group();
+                    outerGroup.visible = (index === 0);
+                    scene.add(outerGroup);
+                    loadedGroups.push(outerGroup);
+
+                    loader.load(item.archivo, (gltf) => {
+                        const model = gltf.scene;
+
+                        const modelWrapper = new THREE.Group();
+                        modelWrapper.add(model);
+
+                        const box = new THREE.Box3().setFromObject(modelWrapper);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+                        
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scale = 2.5 / (maxDim || 1);
+                        
+                        modelWrapper.position.sub(center.multiplyScalar(scale));
+                        modelWrapper.scale.set(scale, scale, scale);
+
+                        outerGroup.add(modelWrapper);
+                    }, undefined, (error) => {
+                        console.warn(`No se pudo cargar el archivo GLB "${item.archivo}". Usando forma alternativa.`);
+                        const fallbackGeo = new THREE.OctahedronGeometry(1.2, 0);
+                        const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+                        outerGroup.add(new THREE.Mesh(fallbackGeo, fallbackMat));
+                    });
+                });
+
+                // ==========================================
+                // CLIC DIRECTO DESDE EL CUADRO INVISIBLE
+                // ==========================================
+                if (clickOverlay) {
+                    clickOverlay.addEventListener('click', () => {
+                        const info = modelos3D[currentModelIdx];
+                        if (info && info.link && info.link !== '#') {
+                            window.open(info.link, '_blank');
+                        }
+                    });
+                }
+
+                const updateModelDetailsText = () => {
+                    const info = modelos3D[currentModelIdx];
+                    const titleEl = document.getElementById('des-title');
+                    const badgeEl = document.getElementById('des-badge');
+                    const textEl = document.getElementById('des-text');
+                    const linkEl = document.getElementById('des-link');
+
+                    [titleEl, badgeEl, textEl, linkEl].forEach(el => {
+                        if (el) el.classList.add('fade-out');
+                    });
+
+                    setTimeout(() => {
+                        if (titleEl) titleEl.textContent = `"${info.titulo.toUpperCase()}"`;
+                        if (badgeEl) badgeEl.textContent = `"${info.categoria.toUpperCase()}"`;
+                        if (textEl) textEl.textContent = `"${info.descripcion}"`;
+                        if (linkEl) {
+                            linkEl.href = info.link || "#";
+                            linkEl.style.display = info.link ? 'inline-flex' : 'none';
+                        }
+
+                        [titleEl, badgeEl, textEl, linkEl].forEach(el => {
+                            if (el) el.classList.remove('fade-out');
+                            if (el) el.classList.add('fade-in');
+                        });
+                    }, 180);
+                };
+
+                const switchModelWithFade = (nextIdx) => {
+                    if (isFading || nextIdx === currentModelIdx || loadedGroups.length === 0) return;
+                    isFading = true;
+
+                    const currentMeshGroup = loadedGroups[currentModelIdx];
+                    const nextMeshGroup = loadedGroups[nextIdx];
+
+                    nextMeshGroup.visible = true;
+                    nextMeshGroup.rotation.y = currentMeshGroup.rotation.y;
+
+                    currentMeshGroup.visible = false;
+                    currentModelIdx = nextIdx;
+                    updateModelDetailsText();
+                    isFading = false;
+                };
+
+                document.getElementById('btn-prev-model')?.addEventListener('click', () => {
+                    const prev = (currentModelIdx - 1 + modelos3D.length) % modelos3D.length;
+                    switchModelWithFade(prev);
+                });
+
+                document.getElementById('btn-next-model')?.addEventListener('click', () => {
+                    const next = (currentModelIdx + 1) % modelos3D.length;
+                    switchModelWithFade(next);
+                });
+
+                updateModelDetailsText();
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const activeMesh = loadedGroups[currentModelIdx];
+                    if (activeMesh) {
+                        activeMesh.rotation.y += 0.01;
+                    }
+                    renderer.render(scene, camera);
+                };
+
+                const resizeCanvas = () => {
+                    if (!canvasContainer) return;
+                    const width = canvasContainer.clientWidth;
+                    const height = canvasContainer.clientHeight;
+                    camera.aspect = width / height;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(width, height);
+                };
+
+                window.addEventListener('resize', resizeCanvas);
+                animate();
+            }
+
+            // Lógica del Pixel Art Studio
+            const state = {
+                gridSize: 16,
+                currentColor: '#ffffff',
+                currentTool: 'pencil',
+                showGrid: true,
+                zoomLevel: 1.0,
+                isDrawing: false,
+                lastX: -1,
+                lastY: -1,
+                lightCanvasTheme: false,
+                history: [],
+                historyIndex: -1,
+                maxHistory: 30,
+                pixelData: []
+            };
+
+            const presetPalette = [
+                '#ffffff', '#cccccc', '#888888', '#444444', '#000000',
+                '#ff4d4d', '#ffb703', '#2ecc71', '#00bbf9', '#9b5de5'
+            ];
+
+            const pixelCanvas = document.getElementById('pixel-canvas');
+            const ctx = pixelCanvas.getContext('2d', { willReadFrequently: true });
+            const gridCanvas = document.getElementById('grid-canvas');
+            const gridCtx = gridCanvas.getContext('2d');
+            const cursorCanvas = document.getElementById('cursor-canvas');
+            const cursorCtx = cursorCanvas.getContext('2d');
+            const canvasWrapper = document.getElementById('canvas-wrapper');
+            const viewport = document.getElementById('viewport');
+            const viewportContainer = document.getElementById('viewport-container');
+
+            function initCanvas() {
+                const size = state.gridSize;
+                
+                const viewportRect = viewport.getBoundingClientRect();
+                const maxDim = Math.min(viewportRect.width - 40, viewportRect.height - 40, 520);
+                const displaySize = Math.max(280, maxDim);
+                
+                pixelCanvas.width = size;
+                pixelCanvas.height = size;
+                pixelCanvas.style.width = `${displaySize}px`;
+                pixelCanvas.style.height = `${displaySize}px`;
+
+                gridCanvas.width = displaySize;
+                gridCanvas.height = displaySize;
+                gridCanvas.style.width = `${displaySize}px`;
+                gridCanvas.style.height = `${displaySize}px`;
+
+                cursorCanvas.width = displaySize;
+                cursorCanvas.height = displaySize;
+                cursorCanvas.style.width = `${displaySize}px`;
+                cursorCanvas.style.height = `${displaySize}px`;
+
+                ctx.imageSmoothingEnabled = false;
+
+                state.pixelData = Array(size).fill(null).map(() => Array(size).fill(null));
+                state.history = [];
+                state.historyIndex = -1;
+                
+                saveHistoryState();
+                renderPixelCanvas();
+                renderGrid();
+            }
+
+            function renderPixelCanvas() {
+                ctx.clearRect(0, 0, state.gridSize, state.gridSize);
+                for (let y = 0; y < state.gridSize; y++) {
+                    for (let x = 0; x < state.gridSize; x++) {
+                        const color = state.pixelData[y][x];
+                        if (color) {
+                            ctx.fillStyle = color;
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    }
+                }
+            }
+
+            function renderGrid() {
+                const displaySize = gridCanvas.width;
+                gridCtx.clearRect(0, 0, displaySize, displaySize);
+
+                if (!state.showGrid) return;
+
+                const cellSize = displaySize / state.gridSize;
+                gridCtx.strokeStyle = state.lightCanvasTheme ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.12)';
+                gridCtx.lineWidth = 1;
+
+                gridCtx.beginPath();
+                for (let i = 0; i <= state.gridSize; i++) {
+                    const pos = Math.floor(i * cellSize) + 0.5;
+                    gridCtx.moveTo(pos, 0);
+                    gridCtx.lineTo(pos, displaySize);
+                    gridCtx.moveTo(0, pos);
+                    gridCtx.lineTo(displaySize, pos);
+                }
+                gridCtx.stroke();
+            }
+
+            function saveHistoryState() {
+                if (state.historyIndex < state.history.length - 1) {
+                    state.history = state.history.slice(0, state.historyIndex + 1);
+                }
+                
+                const snapshot = state.pixelData.map(row => [...row]);
+                state.history.push(snapshot);
+                
+                if (state.history.length > state.maxHistory) {
+                    state.history.shift();
+                } else {
+                    state.historyIndex++;
+                }
+                
+                updateUndoRedoButtons();
+            }
+
+            function undo() {
+                if (state.historyIndex > 0) {
+                    state.historyIndex--;
+                    state.pixelData = state.history[state.historyIndex].map(row => [...row]);
+                    renderPixelCanvas();
+                    updateUndoRedoButtons();
+                }
+            }
+
+            function redo() {
+                if (state.historyIndex < state.history.length - 1) {
+                    state.historyIndex++;
+                    state.pixelData = state.history[state.historyIndex].map(row => [...row]);
+                    renderPixelCanvas();
+                    updateUndoRedoButtons();
+                }
+            }
+
+            function updateUndoRedoButtons() {
+                const undoBtn = document.getElementById('btn-undo');
+                const redoBtn = document.getElementById('btn-redo');
+                if (undoBtn) undoBtn.disabled = state.historyIndex <= 0;
+                if (redoBtn) redoBtn.disabled = state.historyIndex >= state.history.length - 1;
+            }
+
+            function getPixelCoords(e) {
+                const rect = pixelCanvas.getBoundingClientRect();
+                const clientX = e.clientX;
+                const clientY = e.clientY;
+
+                const relX = clientX - rect.left;
+                const relY = clientY - rect.top;
+
+                const x = Math.floor((relX / rect.width) * state.gridSize);
+                const y = Math.floor((relY / rect.height) * state.gridSize);
+
+                return {
+                    x: Math.max(0, Math.min(state.gridSize - 1, x)),
+                    y: Math.max(0, Math.min(state.gridSize - 1, y))
+                };
+            }
+
+            function applyTool(x, y) {
+                if (x < 0 || x >= state.gridSize || y < 0 || y >= state.gridSize) return;
+
+                if (state.currentTool === 'pencil') {
+                    if (state.pixelData[y][x] !== state.currentColor) {
+                        state.pixelData[y][x] = state.currentColor;
+                        renderPixelCanvas();
+                    }
+                } else if (state.currentTool === 'eraser') {
+                    if (state.pixelData[y][x] !== null) {
+                        state.pixelData[y][x] = null;
+                        renderPixelCanvas();
+                    }
+                } else if (state.currentTool === 'picker') {
+                    const color = state.pixelData[y][x];
+                    if (color) {
+                        updateCurrentColor(color);
+                        setActiveTool('pencil');
+                    }
+                }
+            }
+
+            function drawLine(x0, y0, x1, y1) {
+                const dx = Math.abs(x1 - x0);
+                const dy = Math.abs(y1 - y0);
+                const sx = x0 < x1 ? 1 : -1;
+                const sy = y0 < y1 ? 1 : -1;
+                let err = dx - dy;
+
+                let currX = x0;
+                let currY = y0;
+
+                while (true) {
+                    applyTool(currX, currY);
+                    if (currX === x1 && currY === y1) break;
+                    const e2 = 2 * err;
+                    if (e2 > -dy) {
+                        err -= dy;
+                        currX += sx;
+                    }
+                    if (e2 < dx) {
+                        err += dx;
+                        currY += sy;
+                    }
+                }
+            }
+
+            function drawCursorPreview(x, y) {
+                const displaySize = cursorCanvas.width;
+                cursorCtx.clearRect(0, 0, displaySize, displaySize);
+                
+                const cellSize = displaySize / state.gridSize;
+                cursorCtx.strokeStyle = state.currentTool === 'eraser' ? '#ff4d4d' : '#ffffff';
+                cursorCtx.lineWidth = 1.5;
+                cursorCtx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+
+                document.getElementById('cursor-pos-info').innerText = `X: ${x}, Y: ${y}`;
+            }
+
+            function handlePointerDown(e) {
+                if (e.button !== 0 && e.pointerType === 'mouse') return;
+                
+                if (state.currentTool === 'zoom') {
+                    zoomIn();
+                    return;
+                }
+
+                const coords = getPixelCoords(e);
+                state.isDrawing = true;
+                state.lastX = coords.x;
+                state.lastY = coords.y;
+
+                try {
+                    pixelCanvas.setPointerCapture(e.pointerId);
+                } catch (err) {}
+
+                applyTool(coords.x, coords.y);
+                drawCursorPreview(coords.x, coords.y);
+            }
+
+            function handlePointerMove(e) {
+                const coords = getPixelCoords(e);
+                drawCursorPreview(coords.x, coords.y);
+
+                if (state.isDrawing) {
+                    if (e.pointerType === 'mouse' && e.buttons === 0) {
+                        handlePointerUp(e);
+                        return;
+                    }
+
+                    drawLine(state.lastX, state.lastY, coords.x, coords.y);
+                    state.lastX = coords.x;
+                    state.lastY = coords.y;
+                }
+            }
+
+            function handlePointerUp(e) {
+                if (state.isDrawing) {
+                    state.isDrawing = false;
+                    state.lastX = -1;
+                    state.lastY = -1;
+                    try {
+                        if (e && e.pointerId) {
+                            pixelCanvas.releasePointerCapture(e.pointerId);
+                        }
+                    } catch (err) {}
+                    saveHistoryState();
+                }
+            }
+
+            pixelCanvas.addEventListener('pointerdown', handlePointerDown);
+            pixelCanvas.addEventListener('pointermove', handlePointerMove);
+            pixelCanvas.addEventListener('pointerup', handlePointerUp);
+            pixelCanvas.addEventListener('pointercancel', handlePointerUp);
+
+            window.addEventListener('pointerup', handlePointerUp);
+            window.addEventListener('blur', handlePointerUp);
+
+            pixelCanvas.addEventListener('pointerleave', () => {
+                cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+            });
+
+            function updateZoomTransform() {
+                canvasWrapper.style.transform = `scale(${state.zoomLevel})`;
+                document.getElementById('zoom-percentage').innerText = `${Math.round(state.zoomLevel * 100)}%`;
+            }
+
+            function zoomIn() {
+                if (state.zoomLevel < 4.0) {
+                    state.zoomLevel = +(state.zoomLevel + 0.25).toFixed(2);
+                    updateZoomTransform();
+                }
+            }
+
+            function zoomOut() {
+                if (state.zoomLevel > 0.5) {
+                    state.zoomLevel = +(state.zoomLevel - 0.25).toFixed(2);
+                    updateZoomTransform();
+                }
+            }
+
+            function resetZoom() {
+                state.zoomLevel = 1.0;
+                updateZoomTransform();
+            }
+
+            document.getElementById('zoom-in').addEventListener('click', zoomIn);
+            document.getElementById('zoom-out').addEventListener('click', zoomOut);
+            document.getElementById('zoom-reset').addEventListener('click', resetZoom);
+
+            viewport.addEventListener('wheel', (e) => {
+                if (e.ctrlKey || state.currentTool === 'zoom') {
+                    e.preventDefault();
+                    if (e.deltaY < 0) zoomIn();
+                    else zoomOut();
+                }
+            }, { passive: false });
+
+            function setActiveTool(toolName) {
+                state.currentTool = toolName;
+                
+                const tools = ['pencil', 'eraser', 'picker', 'zoom'];
+                tools.forEach(t => {
+                    const btn = document.getElementById(`tool-${t}`);
+                    const indicator = btn.querySelector('.active-indicator');
+                    if (t === toolName) {
+                        btn.classList.add('text-white');
+                        btn.classList.remove('text-gray-400');
+                        if (indicator) indicator.classList.remove('hidden');
+                    } else {
+                        btn.classList.remove('text-white');
+                        btn.classList.add('text-gray-400');
+                        if (indicator) indicator.classList.add('hidden');
+                    }
+                });
+            }
+
+            document.getElementById('tool-pencil').addEventListener('click', () => setActiveTool('pencil'));
+            document.getElementById('tool-eraser').addEventListener('click', () => setActiveTool('eraser'));
+            document.getElementById('tool-picker').addEventListener('click', () => setActiveTool('picker'));
+            document.getElementById('tool-zoom').addEventListener('click', () => setActiveTool('zoom'));
+
+            const satValCanvas = document.getElementById('sat-val-canvas');
+            const satValCtx = satValCanvas.getContext('2d', { willReadFrequently: true });
+            const hueCanvas = document.getElementById('hue-canvas');
+            const hueCtx = hueCanvas.getContext('2d');
+
+            let currentHue = 0;
+            let satValX = 0;
+            let satValY = 0;
+
+            function renderHueBar() {
+                const width = hueCanvas.width;
+                const height = hueCanvas.height;
+                
+                const gradient = hueCtx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, '#ff0000');
+                gradient.addColorStop(0.17, '#ffff00');
+                gradient.addColorStop(0.33, '#00ff00');
+                gradient.addColorStop(0.5, '#00ffff');
+                gradient.addColorStop(0.67, '#0000ff');
+                gradient.addColorStop(0.83, '#ff00ff');
+                gradient.addColorStop(1, '#ff0000');
+
+                hueCtx.fillStyle = gradient;
+                hueCtx.fillRect(0, 0, width, height);
+            }
+
+            function renderSatValBox(hue) {
+                const width = satValCanvas.width;
+                const height = satValCanvas.height;
+
+                satValCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                satValCtx.fillRect(0, 0, width, height);
+
+                const whiteGrad = satValCtx.createLinearGradient(0, 0, width, 0);
+                whiteGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                whiteGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                satValCtx.fillStyle = whiteGrad;
+                satValCtx.fillRect(0, 0, width, height);
+
+                const blackGrad = satValCtx.createLinearGradient(0, 0, 0, height);
+                blackGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                blackGrad.addColorStop(1, 'rgba(0, 0, 0, 1)');
+                satValCtx.fillStyle = blackGrad;
+                satValCtx.fillRect(0, 0, 0, height);
+            }
+
+            function updateCurrentColor(colorHex) {
+                state.currentColor = colorHex;
+                document.getElementById('current-color-preview').style.backgroundColor = colorHex;
+                document.getElementById('modal-color-swatch').style.backgroundColor = colorHex;
+                document.getElementById('modal-color-hex').innerText = colorHex.toUpperCase();
+            }
+
+            function populatePalette() {
+                const container = document.getElementById('palette-container');
+                container.innerHTML = '';
+                presetPalette.forEach(color => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-jelly w-4 h-4 rounded cursor-pointer outline-none border border-black/30';
+                    btn.style.backgroundColor = color;
+                    btn.onclick = () => updateCurrentColor(color);
+                    container.appendChild(btn);
+                });
+            }
+
+            let isHueDragging = false;
+            function handleHuePicker(e) {
+                const rect = hueCanvas.getBoundingClientRect();
+                const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+                const percent = y / rect.height;
+
+                currentHue = Math.round(percent * 360);
+                document.getElementById('hue-picker').style.top = `${percent * 100}%`;
+                renderSatValBox(currentHue);
+                sampleSatValColor();
+            }
+
+            hueCanvas.addEventListener('pointerdown', (e) => { isHueDragging = true; handleHuePicker(e); });
+            window.addEventListener('pointermove', (e) => { if (isHueDragging) handleHuePicker(e); });
+            window.addEventListener('pointerup', () => { isHueDragging = false; });
+
+            let isSatValDragging = false;
+            function handleSatValPicker(e) {
+                const rect = satValCanvas.getBoundingClientRect();
+                const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+
+                satValX = x / rect.width;
+                satValY = y / rect.height;
+
+                const pickerDot = document.getElementById('sat-val-picker');
+                pickerDot.style.left = `${satValX * 100}%`;
+                pickerDot.style.top = `${satValY * 100}%`;
+
+                sampleSatValColor();
+            }
+
+            function sampleSatValColor() {
+                const px = Math.floor(satValX * (satValCanvas.width - 1));
+                const py = Math.floor(satValY * (satValCanvas.height - 1));
+                const pixel = satValCtx.getImageData(px, py, 1, 1).data;
+                const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1)}`;
+                updateCurrentColor(hex);
+            }
+
+            satValCanvas.addEventListener('pointerdown', (e) => { isSatValDragging = true; handleSatValPicker(e); });
+            window.addEventListener('pointermove', (e) => { if (isSatValDragging) handleSatValPicker(e); });
+            window.addEventListener('pointerup', () => { isSatValDragging = false; });
+
+            const colorWheelCanvas = document.getElementById('color-wheel-canvas');
+            const colorWheelCtx = colorWheelCanvas.getContext('2d', { willReadFrequently: true });
+            const wheelLightnessInput = document.getElementById('wheel-lightness');
+
+            function drawColorWheel() {
+                const width = colorWheelCanvas.width;
+                const height = colorWheelCanvas.height;
+                const radius = width / 2;
+                const lightness = wheelLightnessInput.value;
+
+                colorWheelCtx.clearRect(0, 0, width, height);
+
+                for (let y = -radius; y < radius; y++) {
+                    for (let x = -radius; x < radius; x++) {
+                        const distance = Math.sqrt(x * x + y * y);
+                        if (distance <= radius) {
+                            let angle = Math.atan2(y, x) * (180 / Math.PI);
+                            if (angle < 0) angle += 360;
+                            const saturation = (distance / radius) * 100;
+
+                            colorWheelCtx.fillStyle = `hsl(${angle}, ${saturation}%, ${lightness}%)`;
+                            colorWheelCtx.fillRect(x + radius, y + radius, 1, 1);
+                        }
+                    }
+                }
+            }
+
+            document.getElementById('btn-chromatic-modal').addEventListener('click', () => {
+                document.getElementById('chromatic-modal').classList.remove('hidden');
+                drawColorWheel();
+            });
+
+            document.getElementById('btn-close-modal').addEventListener('click', () => {
+                document.getElementById('chromatic-modal').classList.add('hidden');
+            });
+
+            document.getElementById('btn-apply-modal-color')?.addEventListener('click', () => {
+                document.getElementById('chromatic-modal').classList.add('hidden');
+            });
+
+            wheelLightnessInput.addEventListener('input', drawColorWheel);
+
+            colorWheelCanvas.addEventListener('click', (e) => {
+                const rect = colorWheelCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const pixel = colorWheelCtx.getImageData(x, y, 1, 1).data;
+                
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1)}`;
+                    updateCurrentColor(hex);
+                    document.getElementById('wheel-picker-dot').style.left = `${x}px`;
+                    document.getElementById('wheel-picker-dot').style.top = `${y}px`;
+                }
+            });
+
+            document.getElementById('canvas-theme-toggle').addEventListener('click', () => {
+                state.lightCanvasTheme = !state.lightCanvasTheme;
+                const dot = document.getElementById('theme-switch-dot');
+                if (state.lightCanvasTheme) {
+                    viewportContainer.className = "flex-1 bg-checkerboard-light rounded-[20px] flex flex-col overflow-hidden relative shadow-inner transition-colors duration-200";
+                    dot.style.transform = 'translateX(0px)';
+                } else {
+                    viewportContainer.className = "flex-1 bg-[#0a0a0a] rounded-[20px] flex flex-col overflow-hidden relative shadow-inner transition-colors duration-200";
+                    dot.style.transform = 'translateX(16px)';
+                }
+                renderGrid();
+            });
+
+            document.getElementById('grid-size-select').addEventListener('change', (e) => {
+                state.gridSize = parseInt(e.target.value, 10);
+                initCanvas();
+            });
+
+            document.getElementById('btn-toggle-grid').addEventListener('click', () => {
+                state.showGrid = !state.showGrid;
+                renderGrid();
+            });
+
+            document.getElementById('btn-clear').addEventListener('click', () => {
+                state.pixelData = Array(state.gridSize).fill(null).map(() => Array(state.gridSize).fill(null));
+                renderPixelCanvas();
+                saveHistoryState();
+            });
+
+            document.getElementById('btn-undo').addEventListener('click', undo);
+            document.getElementById('btn-redo').addEventListener('click', redo);
+
+            document.getElementById('btn-download').addEventListener('click', () => {
+                const exportCanvas = document.createElement('canvas');
+                const exportScale = 32;
+                exportCanvas.width = state.gridSize * exportScale;
+                exportCanvas.height = state.gridSize * exportScale;
+                const exportCtx = exportCanvas.getContext('2d');
+                exportCtx.imageSmoothingEnabled = false;
+
+                for (let y = 0; y < state.gridSize; y++) {
+                    for (let x = 0; x < state.gridSize; x++) {
+                        const color = state.pixelData[y][x];
+                        if (color) {
+                            exportCtx.fillStyle = color;
+                            exportCtx.fillRect(x * exportScale, y * exportScale, exportScale, exportScale);
+                        }
+                    }
+                }
+
+                const link = document.createElement('a');
+                link.download = `pixel-art-${state.gridSize}x${state.gridSize}.png`;
+                link.href = exportCanvas.toDataURL('image/png');
+                link.click();
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+                
+                const key = e.key.toLowerCase();
+                if (key === 'p') setActiveTool('pencil');
+                if (key === 'e') setActiveTool('eraser');
+                if (key === 'i') setActiveTool('picker');
+                if (key === 'z') setActiveTool('zoom');
+                if (key === 'g') { state.showGrid = !state.showGrid; renderGrid(); }
+                
+                if ((e.ctrlKey || e.metaKey) && key === 'z') {
+                    e.preventDefault();
+                    if (e.shiftKey) redo();
+                    else undo();
+                }
+                if ((e.ctrlKey || e.metaKey) && key === 'y') {
+                    e.preventDefault();
+                    redo();
+                }
+            });
+
+            renderHueBar();
+            renderSatValBox(currentHue);
+            populatePalette();
+            initCanvas();
+            
+            window.addEventListener('resize', () => {
+                initCanvas();
+            });
+        });
+    </script>
+</body>
+</html>

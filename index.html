@@ -16,7 +16,10 @@
                         darkbg: '#060a0c', 
                         panelbg: '#09201f', 
                         accent: '#a9d9e5', 
-                        whitepure: '#ffffff'
+                        whitepure: '#ffffff',
+                        accentNeon: '#aee0df',
+                        accentNeonHover: '#c3e9e8',
+                        accentRadar: '#00faf9'
                     }
                 }
             }
@@ -51,12 +54,7 @@
 
         body {
             font-family: 'LouisGeorgeCafe', sans-serif;
-            background-color: #222222;
-            background-image: url('bgprincipal.svg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-color: #060d0f;
             color: #ffffff;
             overflow-x: hidden;
             user-select: none;
@@ -194,6 +192,31 @@
             touch-action: none;
         }
 
+        /* --- FONDO LÍQUIDO GEOMÉTRICO (WEBGL) --- */
+        #webgl-bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            display: block;
+            image-rendering: auto;
+            touch-action: auto;
+        }
+
+        #bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background-color: #060d0f;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
         ::-webkit-scrollbar {
             width: 5px;
             height: 5px;
@@ -221,6 +244,20 @@
             transform: translateY(0px);
         }
 
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0px);
+            }
+        }
+        .fade-in-anim {
+            animation: fadeSlideIn 0.45s ease-out forwards;
+        }
+
         /* --- CONFIGURACIÓN DE ESTILOS Y EFECTOS --- */
         .smooth-transition { transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
@@ -232,7 +269,18 @@
         }
         .animate-radar { animation: radar 2s infinite; }
 
-        /* Jelatina adicional */
+        /* Transición suave entre colores azules para el texto de políticas */
+        @keyframes bluePulseText {
+            0% { color: #a9d9e5; }
+            33% { color: #38bdf8; }
+            66% { color: #60a5fa; }
+            100% { color: #a9d9e5; }
+        }
+        .animate-blue-text {
+            animation: bluePulseText 6s infinite ease-in-out;
+        }
+
+        /* Gelatina adicional */
         @keyframes jelly {
             0%, 100% { transform: scale(1, 1); }
             30% { transform: scale(1.25, 0.75); }
@@ -265,62 +313,54 @@
             100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2); }
         }
 
-        /* Cursor personalizado (pixel-retro) */
-        @media (min-width: 768px) {
-            * { cursor: none !important; }
-        }
-        
-        #cursor-dot {
-            position: fixed;
-            top: 0; left: 0;
-            width: 6px; height: 6px;
-            background-color: #a9d9e5;
-            pointer-events: none;
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 8px #a9d9e5, 0 0 2px #ffffff;
-            image-rendering: pixelated;
+        /* Estilos específicos para la Hitbox e imágenes del Pop-up de Monyka */
+        .hitbox {
+            position: absolute;
+            cursor: pointer;
+            background-color: transparent;
+            border: 2px dashed transparent;
+            box-sizing: border-box;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
-        #cursor-ring {
-            position: fixed;
-            top: 0; left: 0;
-            width: 32px; height: 32px;
-            border: 2px dashed #a9d9e5;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9998;
-            transform: translate(-50%, -50%);
-            transition: width 0.2s ease-out, height 0.2s ease-out, border-color 0.2s, background-color 0.2s, border-radius 0.2s ease-out;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: inset 0 0 8px rgba(169, 217, 229, 0.2);
+        .hitbox-background {
+            z-index: 5;
         }
 
-        #cursor-ring.active {
-            border-style: solid;
-            border-color: #ffffff;
-            background-color: rgba(169, 217, 229, 0.15);
-            box-shadow: 0 0 12px rgba(169, 217, 229, 0.4), inset 0 0 8px rgba(169, 217, 229, 0.3);
+        .hitbox-foreground {
+            z-index: 10;
         }
 
-        #fx-canvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            pointer-events: none;
-            z-index: 9997;
+        .hitbox:hover {
+            background-color: transparent;
+            border-color: transparent;
+        }
+
+        .img-fade {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
     </style>
 </head>
 <body class="min-h-screen relative flex flex-col justify-between select-none bg-[#222222]">
 
-    <!-- Elementos del Cursor Personalizado y Efectos -->
-    <div id="cursor-dot"></div>
-    <div id="cursor-ring"></div>
-    <canvas id="fx-canvas"></canvas>
+    <!-- FONDO LÍQUIDO GEOMÉTRICO (WEBGL) -->
+    <canvas id="webgl-bg-canvas"></canvas>
 
-    <!-- Bottom Left Floating Contact Button -->
-    <div class="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40">
+    <!-- CAPA PLANA DE COLOR SOBRE EL FONDO -->
+    <div id="bg-overlay"></div>
+
+
+    <!-- Bottom Left Floating Buttons (Precios y Contacto) -->
+    <div class="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 flex flex-col items-center gap-3 sm:gap-4">
+        <button id="btn-ver-precios" title="Ver Precios" class="btn-jelly w-10 h-10 sm:w-14 sm:h-14 bg-whitepure p-2 sm:p-2.5 rounded-2xl animate-radar flex items-center justify-center smooth-transition hover:scale-105 active:scale-95 shrink-0 border-none cursor-pointer focus:outline-none">
+            <img src="money.svg" alt="Ver Precios" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <i class="fa-solid fa-money-bill-wave text-xl sm:text-2xl text-[#0a0a0a] hidden"></i>
+        </button>
+
         <a href="https://linktr.ee/NgArtStudio?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGnV4mzcu8P_XDdrBtgGGk0hkyLR4ssJVvBcr8YJSyJLt8Hv6P3fMCS5qmKuLM_aem_DIDWflWZFxw84mcZ9biTSA" target="_blank" onclick="playClickSound()" class="w-10 h-10 sm:w-14 sm:h-14 bg-whitepure p-2 sm:p-2.5 rounded-2xl animate-radar flex items-center justify-center smooth-transition hover:scale-105 active:scale-95 shrink-0" title="Contacto">
             <img src="contacto.svg" alt="Contacto" class="w-full h-full object-contain" onerror="this.onerror=null; this.outerHTML='<svg class=\'w-full h-full text-accent p-1.5 object-contain hover:text-whitepure smooth-transition\' fill=\'currentColor\' viewBox=\'0 0 24 24\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z\'/></svg>';">
         </a>
@@ -330,11 +370,21 @@
     <div class="fixed top-4 right-4 sm:top-6 sm:right-6 z-40 flex flex-col items-center gap-3 sm:gap-5">
         <button id="btn-bell" title="Noticias y Notificaciones" class="btn-jelly text-white hover:text-gray-300 cursor-pointer relative bg-transparent border-none p-2 sm:p-0 focus:outline-none">
             <i class="fa-solid fa-bell text-2xl sm:text-3xl"></i>
-            <span class="absolute top-1 right-1 sm:-top-1 sm:-right-1 w-2.5 h-2.5 bg-cyan-400 rounded-full"></span>
+            <span class="absolute top-1 right-1 sm:-top-1 sm:-right-1 w-2.5 h-2.5 bg-accentNeon rounded-full"></span>
         </button>
 
         <button id="btn-pencil" title="Pixel Art Studio" class="btn-jelly text-white hover:text-gray-300 cursor-pointer bg-transparent border-none p-2 sm:p-0 focus:outline-none">
             <i class="fa-solid fa-paint-brush text-2xl sm:text-3xl"></i>
+        </button>
+
+        <a href="https://linktr.ee/NgArtStudio" target="_blank" id="btn-media" title="LinkTree" onclick="playClickSound()" class="btn-jelly text-white hover:text-gray-300 cursor-pointer bg-transparent border-none p-2 sm:p-0 focus:outline-none">
+            <img src="media.svg" alt="LinkTree" class="w-6 h-6 sm:w-7 sm:h-7 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+            <i class="fa-solid fa-share-nodes text-2xl sm:text-3xl hidden"></i>
+        </a>
+
+        <button id="btn-mute" title="Silenciar / Activar música" class="btn-jelly text-white hover:text-gray-300 cursor-pointer bg-transparent border-none p-2 sm:p-0 focus:outline-none">
+            <img id="mute-icon" src="pla.svg" alt="Música" class="w-6 h-6 sm:w-7 sm:h-7 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+            <i id="mute-icon-fallback" class="fa-solid fa-volume-high text-2xl sm:text-3xl hidden"></i>
         </button>
     </div>
 
@@ -372,6 +422,7 @@
         </div>
 
         <div class="mb-4 sm:mb-6 text-white text-xs tracking-widest flex flex-col items-center gap-2 opacity-80 animate-bounce cursor-pointer btn-jelly" onclick="document.getElementById('pc-window').scrollIntoView({behavior: 'smooth'});">
+            <canvas id="audio-spectrum" class="pointer-events-none" style="width: 50vw; max-width: 600px; min-width: 160px; height: 30px; filter: drop-shadow(0 0 3px rgba(255,255,255,0.85));"></canvas>
             <i class="fa-solid fa-chevron-down text-base sm:text-lg"></i>
         </div>
     </main>
@@ -383,7 +434,7 @@
                 <div class="flex items-center space-x-2 sm:space-x-2.5">
                     <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
                     <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
-                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-cyan-400"></div>
+                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-accentNeon"></div>
                 </div>
             </div>
 
@@ -410,11 +461,15 @@
                         
                         </div>
 
-                        <button id="btn-des" title="Ver descripción del modelo" class="btn-jelly mt-1 sm:mt-2 cursor-pointer bg-transparent border-none focus:outline-none flex items-center justify-center z-30">
-                            <img src="des.svg" alt="Descripción" class="w-8 h-8 sm:w-12 sm:h-12 object-contain" onerror="this.style.display='none'; document.getElementById('fallback-des-svg').style.display='block';">
-                            <svg id="fallback-des-svg" class="w-8 h-8 sm:w-12 sm:h-12 hidden" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="24" cy="24" r="20" stroke="#ffffff" stroke-width="3" fill="#07181a"/>
-                                <path d="M24 14V26M24 32H24.02" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+                        <!-- TÍTULO PEQUEÑO DEL MODELO (SE ACTUALIZA CON EL SISTEMA DE MODELO/DESCRIPCIÓN/ENLACE) -->
+                        <h5 id="model-title" class="fade-transition font-custom-bold text-xs sm:text-sm text-white/80 tracking-widest uppercase text-center"></h5>
+
+                        <!-- BOTÓN DESCRIPCIÓN CON EFECTO RADAR -->
+                        <button id="btn-des" title="Ver descripción del modelo" class="btn-jelly animate-radar w-10 h-10 sm:w-14 sm:h-14 bg-whitepure p-2 sm:p-2.5 rounded-2xl mt-1 sm:mt-2 cursor-pointer border-none focus:outline-none flex items-center justify-center z-30 smooth-transition hover:scale-105 active:scale-95 shrink-0">
+                            <img src="des2.svg" alt="Descripción" class="w-full h-full object-contain" onerror="this.style.display='none'; document.getElementById('fallback-des-svg').style.display='block';">
+                            <svg id="fallback-des-svg" class="w-full h-full hidden" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="24" cy="24" r="20" stroke="#000000" stroke-width="3" fill="#ffffff"/>
+                                <path d="M24 14V26M24 32H24.02" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
                             </svg>
                         </button>
                     </div>
@@ -427,6 +482,267 @@
         </div>
     </section>
 
+    <!-- SECCIÓN: ACERCA DE NG ART STUDIO (SIN CUADRO GRIS) -->
+    <div class="w-full max-w-6xl mx-auto px-4 my-8">
+        <hr class="border-t border-white opacity-80 w-full mb-12">
+        <section class="flex flex-col items-center justify-center text-center p-4">
+            <h2 class="font-custom-bold text-2xl sm:text-4xl text-white font-bold tracking-[0.25em] uppercase mb-6">
+                ACERCA DE NGARTSTUDIO
+            </h2>
+            <p class="font-custom-bold text-sm sm:text-base md:text-lg text-gray-300 max-w-3xl leading-relaxed mb-8">
+                Modelador 3D en Blockbench, diseñador gráfico e ilustrador de Pixel Art. Con experiencia como líder de arte en diversos proyectos, Ng transforma conceptos en experiencias visuales únicas y siempre enfocado en superar cada meta. ¿Qué esperas para contactarlo y llevar tu proyecto al siguiente nivel?
+            </p>
+        </section>
+    </div>
+
+    <!-- NUEVA SECCIÓN: SLIDESHOW EVOLUCIÓN (MISMA VENTANA RETRO DE SERVICIOS Y AUTOPLAY) -->
+    <div class="w-full max-w-6xl mx-auto px-2 sm:px-4 my-12">
+        <section class="relative z-10 w-full flex items-center justify-center">
+            <div id="evolution-window" class="w-full max-w-6xl bg-[#0a0a0a] rounded-2xl sm:rounded-[24px] flex flex-col overflow-hidden transition-all duration-300 min-h-[480px] sm:min-h-[580px] border border-white/5 shadow-2xl">
+                
+                <!-- Barra superior de la ventana -->
+                <div class="h-10 sm:h-12 px-4 sm:px-6 bg-[#161616] flex items-center justify-end select-none">
+                    <div class="flex items-center space-x-2 sm:space-x-2.5">
+                        <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                        <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                        <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-accentNeon"></div>
+                    </div>
+                </div>
+
+                <!-- Contenido de la ventana -->
+                <div class="flex-1 p-4 sm:p-10 bg-[#0a0a0a] relative flex flex-col items-center justify-between">
+                    <h3 class="font-custom-bold text-xl sm:text-3xl md:text-4xl text-white font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase my-2 sm:my-4 text-center">
+                        EVOLUCIÓN
+                    </h3>
+
+                    <div class="relative w-full flex items-center justify-between my-2 sm:my-4 min-h-[260px] sm:min-h-[360px]">
+                        <button id="btn-prev-evolution" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                            <i class="fa-solid fa-caret-left text-3xl sm:text-6xl"></i>
+                        </button>
+
+                        <div class="relative flex-1 flex flex-col items-center justify-center gap-4">
+                            <!-- Año / Título arriba, con línea debajo que se ajusta al ancho del texto -->
+                            <div class="flex flex-col items-center">
+                                <h4 id="evolution-title" class="fade-transition font-custom-bold text-sm sm:text-xl text-accentNeon font-bold tracking-widest uppercase text-center">
+                                    ETAPA 01
+                                </h4>
+                                <div id="evolution-underline" class="fade-transition h-[2px] bg-accentNeon mt-2 rounded-full" style="width: 0px;"></div>
+                            </div>
+
+                            <!-- Contenedor PNG -->
+                            <div class="w-48 h-48 sm:w-72 sm:h-72 md:w-80 md:h-80 relative flex items-center justify-center rounded-2xl max-w-full">
+                                <img id="evolution-img" src="evolucion1.png" alt="Evolución" class="fade-transition max-w-full max-h-full object-contain drop-shadow-2xl" onerror="this.onerror=null; this.src='iconong.svg';">
+                            </div>
+                        </div>
+
+                        <button id="btn-next-evolution" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                            <i class="fa-solid fa-caret-right text-3xl sm:text-6xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- SECCIÓN TABLA DE PRECIOS -->
+    <div class="w-full max-w-6xl mx-auto px-2 sm:px-4 my-12">
+        <hr class="border-t border-white opacity-80 w-full mb-12">
+        <section class="relative z-10 w-full flex items-center justify-center">
+            <div id="precios-window" class="w-full max-w-6xl bg-[#0a0a0a] rounded-2xl sm:rounded-[24px] flex flex-col overflow-hidden transition-all duration-300 min-h-[600px] sm:min-h-[720px] border border-white/5 shadow-2xl">
+                
+                <!-- Barra superior de la ventana -->
+                <div class="h-10 sm:h-12 px-4 sm:px-6 bg-[#161616] flex items-center justify-end select-none">
+                    <div class="flex items-center space-x-2 sm:space-x-2.5">
+                        <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                        <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                        <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-accentNeon"></div>
+                    </div>
+                </div>
+
+                <!-- Contenido de la ventana -->
+                <div class="flex-1 p-4 sm:p-10 bg-[#0a0a0a] relative flex flex-col items-center justify-between">
+                    <h2 class="font-custom-bold text-xl sm:text-3xl md:text-4xl text-white font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase my-2 sm:my-4 text-center">
+                        TABLA DE PRECIOS
+                    </h2>
+
+                    <div class="relative w-full flex items-center justify-between my-2 sm:my-4 min-h-[320px] sm:min-h-[460px]">
+                        <button id="btn-prev-precios" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                            <i class="fa-solid fa-caret-left text-3xl sm:text-6xl"></i>
+                        </button>
+
+                        <div class="relative flex-1 flex flex-col items-center justify-center gap-5">
+                            <!-- Contenedor Imagen Tabla de Precios -->
+                            <div class="w-72 h-72 sm:w-96 sm:h-96 md:w-[460px] md:h-[460px] relative flex items-center justify-center rounded-2xl max-w-full">
+                                <img id="precios-img" src="precio1.png" alt="Tabla de Precios" class="fade-transition max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" onerror="this.onerror=null; this.src='iconong.svg';">
+                            </div>
+
+                            <!-- Botón "Ver Ejemplo" solo con ícono del ojo, mismo estilo que el botón de descripción -->
+                            <a id="btn-ejemplo-producto" href="#" target="_blank" title="Ver ejemplo del servicio" class="btn-jelly animate-radar w-10 h-10 sm:w-14 sm:h-14 bg-whitepure p-2 sm:p-2.5 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center smooth-transition hover:scale-105 active:scale-95 shrink-0">
+                                <img src="ojo.svg" alt="Ver ejemplo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <i class="fa-solid fa-eye text-lg sm:text-xl text-[#0a0a0a] hidden"></i>
+                            </a>
+
+                            <!-- Texto interactivo de Políticas con transición entre colores azules -->
+                            <span id="btn-politicas" class="font-custom-bold text-xs sm:text-sm tracking-widest uppercase cursor-pointer transition-all duration-300 animate-blue-text hover:underline mt-1">
+                                Políticas de Servicio & Entregas
+                            </span>
+                        </div>
+
+                        <button id="btn-next-precios" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                            <i class="fa-solid fa-caret-right text-3xl sm:text-6xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- SECCIÓN CLIENTES (SIN CUADRO GRIS EN EL FONDO) -->
+    <div class="w-full max-w-6xl mx-auto px-4 my-8">
+        <hr class="border-t border-white opacity-80 w-full mb-12">
+        <section class="flex flex-col items-center justify-center text-center">
+            <h2 class="font-custom-bold text-2xl sm:text-4xl text-white font-bold tracking-[0.25em] uppercase mb-10">
+                CLIENTES
+            </h2>
+            <div id="clientes-container" class="flex flex-wrap items-center justify-center gap-10 sm:gap-14 w-full">
+                <!-- Se genera dinámicamente mediante JavaScript -->
+            </div>
+        </section>
+    </div>
+
+    <!-- FOOTER CENTRADO Y SIN FONDO -->
+    <footer class="w-full py-8 px-4 mt-12 text-center relative z-10 bg-transparent border-none">
+        <div class="max-w-6xl mx-auto flex flex-col items-center justify-center gap-3">
+            <span class="font-custom-bold text-sm sm:text-base tracking-[0.2em] text-white uppercase font-bold">
+                NgArtStudio
+            </span>
+            <p class="font-custom-bold text-xs text-gray-400 tracking-wider">
+                &copy; 2026 NgArtStudio. Todos los derechos reservados.
+            </p>
+        </div>
+    </footer>
+
+    <!-- MODAL POLÍTICAS Y REGLAS DE TRABAJO -->
+    <div id="modal-politicas" class="modal modal-hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="relative w-full max-w-lg bg-[#0a0a0a] border border-white/20 rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 flex flex-col items-center">
+            <button id="close-modal-politicas" class="btn-jelly absolute top-5 right-5 text-gray-400 hover:text-white cursor-pointer focus:outline-none text-xl p-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <h3 class="font-custom-bold text-lg sm:text-xl text-accentNeon font-bold tracking-widest uppercase mb-4 text-center">
+                POLÍTICAS Y TÉRMINOS
+            </h3>
+            
+            <div class="w-full space-y-4 max-h-[55vh] overflow-y-auto pr-2 text-left font-custom-bold text-xs sm:text-sm text-gray-300 leading-relaxed">
+                <div class="p-3 bg-[#161616] rounded-xl border border-white/5">
+                    <h4 class="text-white font-bold mb-1 uppercase tracking-wider text-xs">1. Proceso de Pedidos</h4>
+                    <p>Todo proyecto requiere una anticipación del 50% antes de iniciar la producción gráfica o el modelado 3D. El saldo restante se cancela al momento de la entrega final.</p>
+                </div>
+                
+                <div class="p-3 bg-[#161616] rounded-xl border border-white/5">
+                    <h4 class="text-white font-bold mb-1 uppercase tracking-wider text-xs">2. Revisiones y Cambios</h4>
+                    <p>Se incluyen hasta 2 rondas de revisiones menores sin costo adicional. Cambios estructurales o reestructuraciones completas del encargo tendrán un costo adicional acorde al ajuste.</p>
+                </div>
+
+                <div class="p-3 bg-[#161616] rounded-xl border border-white/5">
+                    <h4 class="text-white font-bold mb-1 uppercase tracking-wider text-xs">3. Entrega de Archivos</h4>
+                    <p>Los archivos finales se entregarán en los formatos acordados (BBMODEL,PNG, GLB, OBJ, JSON, etc.) una vez recibido el pago completo. No se transfieren derechos de autor salvo acuerdo explícito.</p>
+                </div>
+
+                <div class="p-3 bg-[#161616] rounded-xl border border-white/5">
+                    <h4 class="text-white font-bold mb-1 uppercase tracking-wider text-xs">4. Tiempos de Entrega</h4>
+                    <p>Los tiempos estipulados comienzan a contar a partir de la recepción del material de referencia y el pago inicial. Retrasos por parte del cliente en aprobación congelan temporalmente los plazos.</p>
+                </div>
+            </div>
+
+            <button id="btn-close-politicas-action" class="btn-jelly mt-6 bg-accentNeon hover:bg-accentNeonHover text-black font-custom-bold text-xs px-8 py-2.5 rounded-full font-bold cursor-pointer">
+                ENTENDIDO
+            </button>
+        </div>
+    </div>
+
+    <!-- VENTANA EMERGENTE DE IMAGEN AL BAJAR A SERVICIOS (MONYKAINFO) -->
+<div id="modal-monykainfo" class="modal modal-hidden fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-2 bg-black/80 backdrop-blur-md">
+
+        <div class="modal-content relative w-[98vw] h-[98vh] flex items-center justify-center">
+
+            <!-- Botón de Cerrar (X) -->
+            <button id="close-modal-monykainfo" class="absolute top-2 right-2 sm:top-4 sm:right-4 btn-jelly text-white hover:text-teal-400 cursor-pointer focus:outline-none text-3xl p-2 z-30 drop-shadow-md">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- CONTENEDOR DE LA IMAGEN DE FONDO -->
+            <div class="relative w-full h-full flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl">
+
+                <!-- IMAGEN DE FONDO ESTÁTICA (NO CAMBIA) -->
+                <img id="img-static-bg" class="img-fade opacity-100" src="ventana.svg" alt="Ventana">
+
+                <!-- DOS CAPAS DE IMAGEN PARA TRANSICIÓN SUAVE -->
+                <img id="img-layer-a" class="img-fade opacity-100" src="cabezamonyka.svg" alt="Monyka Layer A" onerror="handleImageError(this)">
+                <img id="img-layer-b" class="img-fade opacity-0" src="cabezamonyka.svg" alt="Monyka Layer B" onerror="handleImageError(this)">
+
+                <!-- HITBOXES DE CAPA SUPERIOR (PERSONAJE: z-index 10) -->
+                <div id="hitbox-head" class="hitbox hitbox-foreground" style="top: 0%; left: 58%; width: 20%; height: 26%;" title="Cabeza"></div>
+                <div id="hitbox-torso" class="hitbox hitbox-foreground" style="top: 26%; left: 58%; width: 20%; height: 26%;" title="Torso"></div>
+                <div id="hitbox-skirt" class="hitbox hitbox-foreground" style="top: 52%; left: 58%; width: 22%; height: 48%;" title="Pelvis"></div>
+
+                <!-- HITBOX DE CAPA INFERIOR (VENTANA: z-index 5) -->
+                <div id="hitbox-screen" class="hitbox hitbox-background" style="top: 17.5%; left: 19.5%; width: 51.5%; height: 71.5%;" title="Ventana"></div>
+
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- VENTANA EMERGENTE DE PRECIOS (BOTÓN DE DINERO) -->
+    <div id="modal-precios-pop" class="modal modal-hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md">
+        <div class="relative w-full max-w-4xl bg-[#0a0a0a] rounded-2xl sm:rounded-[24px] flex flex-col overflow-hidden transition-all duration-300 min-h-[560px] sm:min-h-[680px] border border-white/5 shadow-2xl">
+
+            <!-- Barra superior de la ventana -->
+            <div class="h-10 sm:h-12 px-4 sm:px-6 bg-[#161616] flex items-center justify-between select-none">
+                <span></span>
+                <div class="flex items-center space-x-2 sm:space-x-2.5">
+                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#2a2a2a]"></div>
+                    <div class="w-8 sm:w-10 h-2 sm:h-2.5 rounded-full bg-[#00faf9]"></div>
+                </div>
+            </div>
+
+            <!-- Botón de Cerrar (radar, mismo estilo que los botones flotantes) -->
+            <button id="close-modal-precios-pop" title="Cerrar" class="btn-jelly animate-radar absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 sm:w-11 sm:h-11 bg-whitepure rounded-2xl flex items-center justify-center smooth-transition hover:scale-105 active:scale-95 z-30 cursor-pointer border-none focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg sm:text-xl text-[#0a0a0a]"></i>
+            </button>
+
+            <!-- Contenido de la ventana -->
+            <div class="flex-1 p-4 sm:p-10 bg-[#0a0a0a] relative flex flex-col items-center justify-between">
+                <h2 class="font-custom-bold text-xl sm:text-3xl md:text-4xl text-white font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase my-2 sm:my-4 text-center">
+                    TABLA DE PRECIOS
+                </h2>
+
+                <div class="relative w-full flex items-center justify-between my-2 sm:my-4 min-h-[300px] sm:min-h-[440px]">
+                    <button id="money-btn-prev-precios" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                        <i class="fa-solid fa-caret-left text-3xl sm:text-6xl"></i>
+                    </button>
+
+                    <div class="relative flex-1 flex flex-col items-center justify-center gap-5">
+                        <div class="w-64 h-64 sm:w-80 sm:h-80 md:w-[380px] md:h-[380px] relative flex items-center justify-center rounded-2xl max-w-full">
+                            <img id="money-precios-img" src="precio1.png" alt="Tabla de Precios" class="fade-transition max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" onerror="this.onerror=null; this.src='iconong.svg';">
+                        </div>
+
+                        <a id="money-btn-ejemplo-producto" href="#" target="_blank" title="Ver ejemplo del servicio" class="btn-jelly animate-radar w-10 h-10 sm:w-14 sm:h-14 bg-whitepure p-2 sm:p-2.5 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center smooth-transition hover:scale-105 active:scale-95 shrink-0">
+                            <img src="ojo.svg" alt="Ver ejemplo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <i class="fa-solid fa-eye text-lg sm:text-xl text-[#0a0a0a] hidden"></i>
+                        </a>
+                    </div>
+
+                    <button id="money-btn-next-precios" class="btn-jelly z-20 p-2 sm:p-5 text-white/70 hover:text-white focus:outline-none cursor-pointer">
+                        <i class="fa-solid fa-caret-right text-3xl sm:text-6xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODEL DETAILS POPUP MODAL -->
     <div id="modal-des" class="modal modal-hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
         <div class="relative w-full max-w-md bg-[#0a0a0a] border border-white/20 rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 text-center flex flex-col items-center justify-center">
@@ -437,7 +753,7 @@
             <div id="des-badge" class="fade-transition inline-block bg-white text-[#0a0a0a] font-pixel text-[10px] sm:text-xs px-4 sm:px-5 py-1.5 rounded-full font-bold mb-5 sm:mb-6">"MODELADO 3D"</div>
             <p id="des-text" class="fade-transition font-pixel text-[11px] sm:text-sm text-white leading-loose tracking-wide max-w-xs mb-6">"Bienvenido al Portafolio de NgArtStudio."</p>
 
-            <a id="des-link" href="#" target="_blank" class="btn-jelly bg-cyan-400 hover:bg-cyan-300 text-black font-pixel text-xs px-6 py-2.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-2">
+            <a id="des-link" href="#" target="_blank" class="btn-jelly bg-accentNeon hover:bg-accentNeonHover text-black font-pixel text-xs px-6 py-2.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-2">
                 <span>VISITAR ENLACE</span>
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
             </a>
@@ -450,12 +766,10 @@
             <button id="close-modal-bell" class="btn-jelly absolute top-5 right-5 text-gray-400 hover:text-white cursor-pointer focus:outline-none text-xl p-2">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <h3 class="font-pixel text-xs sm:text-base text-white tracking-widest mt-2 mb-3 leading-relaxed">"NOTICIAS"</h3>
-            <div class="inline-block bg-white text-[#0a0a0a] font-pixel text-[10px] sm:text-xs px-4 sm:px-5 py-1.5 rounded-full font-bold mb-5">"NOTIFICACIONES"</div>
+            <h3 class="font-pixel text-xs sm:text-base text-white tracking-widest mt-2 mb-6 leading-relaxed">"NOTICIAS"</h3>
             <div class="w-full space-y-3 max-h-[45vh] overflow-y-auto pr-1 text-left font-pixel">
                 <div class="p-3.5 sm:p-4 rounded-[18px] bg-[#161616] transition-all">
-                    <div class="flex items-center justify-between text-[9px] sm:text-[10px] text-gray-400 mb-2 font-bold">
-                        <span>"NOVEDADES"</span>
+                    <div class="flex items-center justify-end text-[9px] sm:text-[10px] text-gray-400 mb-2 font-bold">
                         <span>"HOY"</span>
                     </div>
                     <h4 class="text-[11px] sm:text-xs text-white font-bold mb-1 tracking-wide">"¡Bienvenidos a NgArtStudio!"</h4>
@@ -538,8 +852,8 @@
                     </div>
 
                     <div class="flex items-center justify-center py-1">
-                        <div class="btn-jelly w-10 h-10 rounded-full bg-transparent flex items-center justify-center cursor-pointer group relative" title="ngillustrator">
-                            <img src="ngilustrator.svg" alt="ngillustrator" class="w-8 h-8 object-contain" onerror="this.onerror=null; this.src='https://placehold.co/32x32/0a0a0a/ffffff?text=NG';">
+                        <div class="btn-jelly w-[164px] h-[164px] rounded-full bg-transparent flex items-center justify-center cursor-pointer group relative" title="ngillustrator">
+                            <img src="ngilustrator.svg" alt="ngillustrator" class="w-[148px] h-[148px] object-contain" onerror="this.onerror=null; this.src='https://placehold.co/32x32/0a0a0a/ffffff?text=NG';">
                         </div>
                     </div>
 
@@ -669,8 +983,27 @@
 
     <script>
         // --- INTEGRACIÓN DE AUDIO Y EFECTOS DE SONIDO / PARTICULAS ---
-        const bgAudio = new Audio('bg.ogg');
-        bgAudio.loop = true;
+const originalSongs = ['Memorias-Del-Pasado.mp3', 'ng_sountrack_bg_1.mp3', 'ng_sountrack_bg_2.mp3'];
+let playlist = [];
+
+const bgAudio = new Audio();
+
+function playNextRandom() {
+  // Si se acabaron todas las canciones de la cola, recargamos y mezclamos de nuevo
+  if (playlist.length === 0) {
+    playlist = [...originalSongs].sort(() => Math.random() - 0.5);
+  }
+
+  // Extrae y reproduce la siguiente canción disponible
+  const nextSong = playlist.pop();
+  bgAudio.src = nextSong;
+  bgAudio.play();
+}
+
+bgAudio.addEventListener('ended', playNextRandom);
+
+// Iniciar
+playNextRandom();
 
         const buttonSounds = [
             new Audio('Buttom1.ogg'),
@@ -685,8 +1018,70 @@
             sound.play().catch(() => {});
         }
 
+        // --- ESPECTRO DE AUDIO (reacciona a la canción que suena en bgAudio) ---
+        let audioCtx, analyser, spectrumData, spectrumSource;
+        const spectrumCanvas = document.getElementById('audio-spectrum');
+        const spectrumCtx = spectrumCanvas ? spectrumCanvas.getContext('2d') : null;
+
+        function resizeSpectrumCanvas() {
+            if (!spectrumCanvas) return;
+            const rect = spectrumCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            spectrumCanvas.width = Math.max(1, Math.round(rect.width * dpr));
+            spectrumCanvas.height = Math.max(1, Math.round(rect.height * dpr));
+        }
+        window.addEventListener('resize', resizeSpectrumCanvas);
+
+        function initAudioSpectrum() {
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return;
+            }
+            try {
+                resizeSpectrumCanvas();
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 128; // más barras, para el espectro ancho
+                analyser.smoothingTimeConstant = 0.75;
+                spectrumData = new Uint8Array(analyser.frequencyBinCount);
+
+                spectrumSource = audioCtx.createMediaElementSource(bgAudio);
+                spectrumSource.connect(analyser);
+                analyser.connect(audioCtx.destination);
+
+                requestAnimationFrame(drawAudioSpectrum);
+            } catch (err) {
+                console.warn('No se pudo iniciar el espectro de audio:', err.message);
+            }
+        }
+
+        function drawAudioSpectrum() {
+            requestAnimationFrame(drawAudioSpectrum);
+            if (!analyser || !spectrumCtx) return;
+
+            analyser.getByteFrequencyData(spectrumData);
+
+            const w = spectrumCanvas.width;
+            const h = spectrumCanvas.height;
+            spectrumCtx.clearRect(0, 0, w, h);
+
+            const barCount = spectrumData.length;
+            const gap = 1;
+            const barWidth = (w - gap * (barCount - 1)) / barCount;
+
+            spectrumCtx.fillStyle = '#ffffff';
+            for (let i = 0; i < barCount; i++) {
+                const value = spectrumData[i] / 255;
+                const barHeight = Math.max(2, value * h);
+                const x = i * (barWidth + gap);
+                const y = h - barHeight;
+                spectrumCtx.fillRect(x, y, barWidth, barHeight);
+            }
+        }
+
         function startBgMusic() {
             bgAudio.play().then(() => {
+                initAudioSpectrum();
                 window.removeEventListener('click', startBgMusic);
                 window.removeEventListener('keydown', startBgMusic);
                 window.removeEventListener('touchstart', startBgMusic);
@@ -737,146 +1132,85 @@
             }
         });
 
-        // --- INTEGRACIÓN DE CURSOR RETRO Y CANVAS DE EFECTOS ---
-        const cursorDot = document.getElementById('cursor-dot');
-        const cursorRing = document.getElementById('cursor-ring');
-        const fxCanvas = document.getElementById('fx-canvas');
-        const ctxFx = fxCanvas ? fxCanvas.getContext('2d') : null;
+        // =========================================================
+        // LÓGICA DEL POP-UP Y TRANSICIONES DE MONYKA
+        // =========================================================
+        const imageConfig = {
+            head: { img: 'cabezamonyka.svg', audio: 'cabezamonyka.ogg' },
+            torso: { img: 'chichismonyka.svg', audio: 'chichis.ogg' },
+            skirt: { img: 'pelvismonyka.svg', audio: 'pelvis.ogg' },
+            screen: { img: 'ventanamonyka.svg', audio: 'cabezamonyka.ogg' }
+        };
 
-        let mouseX = -100, mouseY = -100;
-        let ringX = -100, ringY = -100;
-        let particles = [];
-        let currentHoverTarget = null;
+        let activeLayer = 'A';
+        let currentFile = '';
+        let resetTimer = null;
+        const RESET_DELAY_MS = 10000; // 10 segundos
+        const currentAudio = new Audio();
 
-        function resizeFxCanvas() {
-            if (!fxCanvas) return;
-            fxCanvas.width = window.innerWidth;
-            fxCanvas.height = window.innerHeight;
+        function handleImageError(imgElem) {
+            const file = imgElem.getAttribute('data-current-file') || imgElem.src.split('/').pop();
+            imgElem.src = `https://placehold.co/1200x800/0a0d12/00cea8?text=Imagen:+${encodeURIComponent(file)}`;
         }
-        window.addEventListener('resize', resizeFxCanvas);
-        resizeFxCanvas();
 
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            
-            if (cursorDot) {
-                cursorDot.style.left = `${mouseX}px`;
-                cursorDot.style.top = `${mouseY}px`;
-            }
-
-            if (Math.random() < 0.5) {
-                spawnPixelParticle(mouseX, mouseY);
-            }
-        });
-
-        document.addEventListener('mousedown', (e) => {
-            for (let i = 0; i < 10; i++) {
-                spawnPixelParticle(e.clientX, e.clientY, true);
-            }
-        });
-
-        function spawnPixelParticle(x, y, isBurst = false) {
-            const colors = ['#a9d9e5', '#ffffff', '#56b8d0', '#09201f'];
-            const size = isBurst ? Math.floor(Math.random() * 4) + 3 : Math.floor(Math.random() * 3) + 2;
-            const speed = isBurst ? (Math.random() * 3.5 + 1) : (Math.random() * 1.2 + 0.2);
-            const angle = Math.random() * Math.PI * 2;
-
-            particles.push({
-                x: x + (Math.random() * 6 - 3),
-                y: y + (Math.random() * 6 - 3),
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                size: size,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                life: 1.0,
-                decay: Math.random() * 0.04 + 0.025
+        function playSound(audioSrc) {
+            if (!audioSrc) return;
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio.src = encodeURI(audioSrc);
+            currentAudio.play().catch(err => {
+                console.warn('No se pudo reproducir el audio:', err.message);
             });
         }
 
-        function updateCursorFx() {
-            if (currentHoverTarget && document.body.contains(currentHoverTarget)) {
-                const rect = currentHoverTarget.getBoundingClientRect();
-                if (rect.width > 0 && rect.height > 0 && rect.width < 320 && rect.height < 320) {
-                    const style = window.getComputedStyle(currentHoverTarget);
-                    const targetX = rect.left + rect.width / 2;
-                    const targetY = rect.top + rect.height / 2;
+        function setBackgroundImage(imgSrc) {
+            const layerA = document.getElementById('img-layer-a');
+            const layerB = document.getElementById('img-layer-b');
+            if (!layerA || !layerB) return;
 
-                    ringX += (targetX - ringX) * 0.25;
-                    ringY += (targetY - ringY) * 0.25;
+            if (currentFile === imgSrc) {
+                startResetTimer();
+                return;
+            }
 
-                    if (cursorRing) {
-                        cursorRing.style.width = `${rect.width + 6}px`;
-                        cursorRing.style.height = `${rect.height + 6}px`;
-                        cursorRing.style.borderRadius = style.borderRadius;
-                    }
-                } else {
-                    ringX += (mouseX - ringX) * 0.22;
-                    ringY += (mouseY - ringY) * 0.22;
-                    if (cursorRing) {
-                        cursorRing.style.width = '48px';
-                        cursorRing.style.height = '48px';
-                        cursorRing.style.borderRadius = '50%';
-                    }
-                }
+            currentFile = imgSrc;
+            const encodedSrc = encodeURI(imgSrc);
+
+            if (activeLayer === 'A') {
+                layerB.setAttribute('data-current-file', imgSrc);
+                layerB.src = encodedSrc;
+                layerB.classList.remove('opacity-0');
+                layerB.classList.add('opacity-100');
+
+                layerA.classList.remove('opacity-100');
+                layerA.classList.add('opacity-0');
+                activeLayer = 'B';
             } else {
-                ringX += (mouseX - ringX) * 0.22;
-                ringY += (mouseY - ringY) * 0.22;
+                layerA.setAttribute('data-current-file', imgSrc);
+                layerA.src = encodedSrc;
+                layerA.classList.remove('opacity-0');
+                layerA.classList.add('opacity-100');
 
-                if (cursorRing) {
-                    cursorRing.style.width = '32px';
-                    cursorRing.style.height = '32px';
-                    cursorRing.style.borderRadius = '50%';
-                }
+                layerB.classList.remove('opacity-100');
+                layerB.classList.add('opacity-0');
+                activeLayer = 'A';
             }
 
-            if (cursorRing) {
-                cursorRing.style.left = `${ringX}px`;
-                cursorRing.style.top = `${ringY}px`;
-            }
-
-            if (ctxFx && fxCanvas) {
-                ctxFx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
-                
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    const p = particles[i];
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.life -= p.decay;
-
-                    if (p.life <= 0) {
-                        particles.splice(i, 1);
-                        continue;
-                    }
-
-                    ctxFx.fillStyle = p.color;
-                    ctxFx.globalAlpha = p.life;
-                    ctxFx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
-                }
-                ctxFx.globalAlpha = 1.0;
-            }
-
-            requestAnimationFrame(updateCursorFx);
+            startResetTimer();
         }
-        requestAnimationFrame(updateCursorFx);
 
-        document.addEventListener('mouseover', (e) => {
-            const target = e.target.closest('button, a, input, select, canvas, .btn-jelly, .hover-jelly');
-            if (target) {
-                currentHoverTarget = target;
-                cursorRing?.classList.add('active');
-            }
-        });
+        function startResetTimer() {
+            clearTimeout(resetTimer);
+            resetTimer = setTimeout(() => {
+                setBackgroundImage(imageConfig.head.img);
+            }, RESET_DELAY_MS);
+        }
 
-        document.addEventListener('mouseout', (e) => {
-            const target = e.target.closest('button, a, input, select, canvas, .btn-jelly, .hover-jelly');
-            if (target && target === currentHoverTarget) {
-                currentHoverTarget = null;
-                cursorRing?.classList.remove('active');
-            }
-        });
+        function handleZoneInteraction(zoneData) {
+            setBackgroundImage(zoneData.img);
+            playSound(zoneData.audio);
+        }
 
-        // --- CÓDIGO ORIGINAL DE PAGINAPRINCIPALFINAL ---
         window.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) {
                 lucide.createIcons();
@@ -887,6 +1221,9 @@
                 if (el) {
                     el.classList.remove('modal-hidden');
                     el.classList.add('modal-visible');
+                    if (modalId === 'modal-monykainfo') {
+                        setBackgroundImage(imageConfig.head.img);
+                    }
                     if (modalId === 'modal-pencil') {
                         setTimeout(() => {
                             initCanvas();
@@ -898,6 +1235,10 @@
             const closeModal = (modalId) => {
                 const el = document.getElementById(modalId);
                 if (el) {
+                    if (modalId === 'modal-monykainfo') {
+                        clearTimeout(resetTimer);
+                        currentAudio.pause();
+                    }
                     el.classList.remove('modal-visible');
                     el.classList.add('modal-hidden');
                 }
@@ -913,22 +1254,282 @@
             document.getElementById('btn-des')?.addEventListener('click', () => openModal('modal-des'));
             document.getElementById('close-modal-des')?.addEventListener('click', () => closeModal('modal-des'));
 
+            document.getElementById('btn-politicas')?.addEventListener('click', () => openModal('modal-politicas'));
+            document.getElementById('close-modal-politicas')?.addEventListener('click', () => closeModal('modal-politicas'));
+            document.getElementById('btn-close-politicas-action')?.addEventListener('click', () => closeModal('modal-politicas'));
+
+            document.getElementById('close-modal-monykainfo')?.addEventListener('click', () => closeModal('modal-monykainfo'));
+
+            document.getElementById('btn-ver-precios')?.addEventListener('click', () => openModal('modal-precios-pop'));
+            document.getElementById('close-modal-precios-pop')?.addEventListener('click', () => closeModal('modal-precios-pop'));
+            document.getElementById('modal-precios-pop')?.addEventListener('click', (e) => {
+                if (e.target.id === 'modal-precios-pop') closeModal('modal-precios-pop');
+            });
+
+            // Botón de Mutear / Desmutear música de fondo
+            const btnMute = document.getElementById('btn-mute');
+            const muteIcon = document.getElementById('mute-icon');
+            const muteIconFallback = document.getElementById('mute-icon-fallback');
+            btnMute?.addEventListener('click', () => {
+                bgAudio.muted = !bgAudio.muted;
+                const iconSrc = bgAudio.muted ? 'mute.svg' : 'pla.svg';
+                if (muteIcon) muteIcon.src = iconSrc;
+                if (muteIconFallback) {
+                    muteIconFallback.classList.remove('fa-volume-high', 'fa-volume-xmark');
+                    muteIconFallback.classList.add(bgAudio.muted ? 'fa-volume-xmark' : 'fa-volume-high');
+                }
+            });
+
+            // Inicialización de hitboxes interactivas para Monyka
+            const hitboxes = [
+                { id: 'hitbox-head', data: imageConfig.head },
+                { id: 'hitbox-torso', data: imageConfig.torso },
+                { id: 'hitbox-skirt', data: imageConfig.skirt },
+                { id: 'hitbox-screen', data: imageConfig.screen }
+            ];
+
+            hitboxes.forEach(({ id, data }) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                el.addEventListener('mouseenter', (e) => {
+                    e.stopPropagation();
+                    handleZoneInteraction(data);
+                });
+
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleZoneInteraction(data);
+                });
+            });
+
+            const monykaModal = document.getElementById('modal-monykainfo');
+            if (monykaModal) {
+                monykaModal.addEventListener('click', (e) => {
+                    if (e.target === monykaModal) closeModal('modal-monykainfo');
+                });
+            }
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && monykaModal && monykaModal.classList.contains('modal-visible')) {
+                    closeModal('modal-monykainfo');
+                }
+            });
+
+            let monykaInfoShown = false;
+            window.addEventListener('scroll', () => {
+                const pcWindow = document.getElementById('pc-window');
+                if (pcWindow && !monykaInfoShown) {
+                    const rect = pcWindow.getBoundingClientRect();
+                    if (rect.top <= window.innerHeight * 0.75 && rect.bottom >= 0) {
+                        openModal('modal-monykainfo');
+                        monykaInfoShown = true;
+                    }
+                }
+            });
+
+            // GALERÍA DE CLIENTES DINÁMICA
+            const clientesData = [
+                { icon: 'esmelogo.svg', nombre: 'EsmeDreamwave' },
+                { icon: 'mrclublogo.svg', nombre: 'Mr Club' },
+                { icon: 'LogoBin.svg', nombre: 'El Bin' }
+            ];
+
+            const clientesContainer = document.getElementById('clientes-container');
+            if (clientesContainer) {
+                clientesData.forEach(cliente => {
+                    const div = document.createElement('div');
+                    div.className = 'flex flex-col items-center p-4 smooth-transition hover:scale-105';
+                    div.innerHTML = `
+                        <div class="w-28 h-28 sm:w-36 sm:h-36 mb-3 flex items-center justify-center">
+                            <img src="${cliente.icon}" alt="${cliente.nombre}" class="w-full h-full object-contain" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-user text-5xl sm:text-6xl text-accentNeon\\'></i>';">
+                        </div>
+                        <span class="font-custom-bold text-xs sm:text-sm text-white font-medium tracking-wide">${cliente.nombre}</span>
+                    `;
+                    clientesContainer.appendChild(div);
+                });
+            }
+
+            // =========================================================
+            // LÓGICA DE SLIDESHOW - EVOLUCIÓN (PASO DE IMÁGENES AUTOMÁTICO Y MANUAL)
+            // =========================================================
+            const evolutionData = [
+                { src: "2022.svg", titulo: "2022" },
+                { src: "2023.svg", titulo: "2023" },
+                { src: "20232.svg", titulo: "2023" },
+                { src: "20232024.svg", titulo: "2023-2024" },
+                { src: "2025.svg", titulo: "2025" },
+                { src: "20252026.svg", titulo: "2025-2026" }
+            ];
+
+            let currentEvoIdx = 0;
+            const evoImg = document.getElementById('evolution-img');
+            const evoTitle = document.getElementById('evolution-title');
+            const evoUnderline = document.getElementById('evolution-underline');
+            const evoWindow = document.getElementById('evolution-window');
+
+            function syncEvolutionUnderline() {
+                if (!evoTitle || !evoUnderline) return;
+                evoUnderline.style.width = evoTitle.offsetWidth + 'px';
+            }
+
+            function updateEvolutionSlide(index) {
+                if (!evoImg || !evoTitle) return;
+                evoImg.classList.add('fade-out');
+                evoTitle.classList.add('fade-out');
+                if (evoUnderline) evoUnderline.classList.add('fade-out');
+
+                setTimeout(() => {
+                    currentEvoIdx = index;
+                    evoImg.src = evolutionData[currentEvoIdx].src;
+                    evoTitle.textContent = evolutionData[currentEvoIdx].titulo;
+                    syncEvolutionUnderline();
+
+                    evoImg.classList.remove('fade-out');
+                    evoTitle.classList.remove('fade-out');
+                    evoImg.classList.add('fade-in');
+                    evoTitle.classList.add('fade-in');
+                    if (evoUnderline) {
+                        evoUnderline.classList.remove('fade-out');
+                        evoUnderline.classList.add('fade-in');
+                    }
+
+                    // Reforzar animación de fade con keyframes (forzando reflow para que se repita siempre)
+                    [evoImg, evoTitle, evoUnderline].forEach(el => {
+                        if (!el) return;
+                        el.classList.remove('fade-in-anim');
+                        void el.offsetWidth; // fuerza reflow
+                        el.classList.add('fade-in-anim');
+                    });
+                }, 200);
+            }
+
+            // Ajustar la línea al cargar y si cambia el tamaño de la ventana
+            syncEvolutionUnderline();
+            window.addEventListener('resize', syncEvolutionUnderline);
+
+            document.getElementById('btn-prev-evolution')?.addEventListener('click', () => {
+                const prev = (currentEvoIdx - 1 + evolutionData.length) % evolutionData.length;
+                updateEvolutionSlide(prev);
+            });
+
+            document.getElementById('btn-next-evolution')?.addEventListener('click', () => {
+                const next = (currentEvoIdx + 1) % evolutionData.length;
+                updateEvolutionSlide(next);
+            });
+
+            // Autoplay para el Slideshow de Evolución
+            let evoInterval = setInterval(() => {
+                const next = (currentEvoIdx + 1) % evolutionData.length;
+                updateEvolutionSlide(next);
+            }, 4000);
+
+            // Pausar autoplay al pasar el ratón por encima
+            if (evoWindow) {
+                evoWindow.addEventListener('mouseenter', () => clearInterval(evoInterval));
+                evoWindow.addEventListener('mouseleave', () => {
+                    evoInterval = setInterval(() => {
+                        const next = (currentEvoIdx + 1) % evolutionData.length;
+                        updateEvolutionSlide(next);
+                    }, 4000);
+                });
+            }
+
+            // =========================================================
+            // LÓGICA DE SLIDESHOW - TABLA DE PRECIOS
+            // =========================================================
+            const preciosData = [
+                 { src: "extras.png", ejemploLink: "https://www.behance.net/ngartstudio" },
+                { src: "modelos.png", ejemploLink: "portafolio3d.html" },
+                { src: "diseñografico.png", ejemploLink: "https://www.behance.net/ngartstudio" },
+                { src: "renders.png", ejemploLink: "https://www.behance.net/ngartstudio" },
+                { src: "animaicon.png", ejemploLink: "https://www.behance.net/ngartstudio" },
+                { src: "texturasprecio.png", ejemploLink: "https://www.behance.net/ngartstudio" }
+            ];
+
+            let currentPrecioIdx = 0;
+            const preciosImg = document.getElementById('precios-img');
+            const btnEjemploProducto = document.getElementById('btn-ejemplo-producto');
+            const preciosWindow = document.getElementById('precios-window');
+            const moneyPreciosImg = document.getElementById('money-precios-img');
+            const moneyBtnEjemploProducto = document.getElementById('money-btn-ejemplo-producto');
+
+            function updatePreciosSlide(index) {
+                if (!preciosImg || !btnEjemploProducto) return;
+                preciosImg.classList.add('fade-out');
+                if (moneyPreciosImg) moneyPreciosImg.classList.add('fade-out');
+
+                setTimeout(() => {
+                    currentPrecioIdx = index;
+                    preciosImg.src = preciosData[currentPrecioIdx].src;
+                    btnEjemploProducto.href = preciosData[currentPrecioIdx].ejemploLink || "#";
+
+                    preciosImg.classList.remove('fade-out');
+                    preciosImg.classList.add('fade-in');
+
+                    if (moneyPreciosImg) {
+                        moneyPreciosImg.src = preciosData[currentPrecioIdx].src;
+                        moneyPreciosImg.classList.remove('fade-out');
+                        moneyPreciosImg.classList.add('fade-in');
+                    }
+                    if (moneyBtnEjemploProducto) {
+                        moneyBtnEjemploProducto.href = preciosData[currentPrecioIdx].ejemploLink || "#";
+                    }
+                }, 200);
+            }
+
+            document.getElementById('btn-prev-precios')?.addEventListener('click', () => {
+                const prev = (currentPrecioIdx - 1 + preciosData.length) % preciosData.length;
+                updatePreciosSlide(prev);
+            });
+
+            document.getElementById('btn-next-precios')?.addEventListener('click', () => {
+                const next = (currentPrecioIdx + 1) % preciosData.length;
+                updatePreciosSlide(next);
+            });
+
+            document.getElementById('money-btn-prev-precios')?.addEventListener('click', () => {
+                const prev = (currentPrecioIdx - 1 + preciosData.length) % preciosData.length;
+                updatePreciosSlide(prev);
+            });
+
+            document.getElementById('money-btn-next-precios')?.addEventListener('click', () => {
+                const next = (currentPrecioIdx + 1) % preciosData.length;
+                updatePreciosSlide(next);
+            });
+
+            // Autoplay para el Slideshow de Precios
+            let preciosInterval = setInterval(() => {
+                const next = (currentPrecioIdx + 1) % preciosData.length;
+                updatePreciosSlide(next);
+            }, 4500);
+
+            if (preciosWindow) {
+                preciosWindow.addEventListener('mouseenter', () => clearInterval(preciosInterval));
+                preciosWindow.addEventListener('mouseleave', () => {
+                    preciosInterval = setInterval(() => {
+                        const next = (currentPrecioIdx + 1) % preciosData.length;
+                        updatePreciosSlide(next);
+                    }, 4500);
+                });
+            }
+
             // =========================================================
             // CONFIGURACIÓN DE MODELOS 3D Y ENLACES
             // =========================================================
             const modelos3D = [
                 { 
                     archivo: "ng3dnormallogo3d.glb", 
-                    titulo: "NgArtStudio 3d", 
+                    titulo: "Ng 3D", 
                     categoria: "Arte", 
                     descripcion: "Aqui encontraras mi portafolio de Modelos 3d.",
-                    link: "index3D.html"
+                    link: "portafolio3d.html"
                 },
                 { 
                     archivo: "ngilustratornormallogo3d.glb", 
-                    titulo: "NgArtStudio Logo", 
+                    titulo: "NgIlustrator", 
                     categoria: "Arte", 
-                    descripcion: "PROXIMAMENTE . . .",
+                    descripcion: "Aqui encontraras mi portafolio de Diseño",
                     link: "https://www.behance.net/ngartstudio"
                 }
             ];
@@ -946,7 +1547,6 @@
                 renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-                // Luces de la escena 3D
                 const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
                 scene.add(ambientLight);
 
@@ -961,6 +1561,8 @@
                 const loadedGroups = [];
                 let currentModelIdx = 0;
                 let isFading = false;
+                let isCanvasVisible = false;
+                let animationFrameId = null;
 
                 const loader = new THREE.GLTFLoader();
 
@@ -995,9 +1597,6 @@
                     });
                 });
 
-                // ==========================================
-                // CLIC DIRECTO DESDE EL CUADRO INVISIBLE
-                // ==========================================
                 if (clickOverlay) {
                     clickOverlay.addEventListener('click', () => {
                         const info = modelos3D[currentModelIdx];
@@ -1013,8 +1612,9 @@
                     const badgeEl = document.getElementById('des-badge');
                     const textEl = document.getElementById('des-text');
                     const linkEl = document.getElementById('des-link');
+                    const smallTitleEl = document.getElementById('model-title');
 
-                    [titleEl, badgeEl, textEl, linkEl].forEach(el => {
+                    [titleEl, badgeEl, textEl, linkEl, smallTitleEl].forEach(el => {
                         if (el) el.classList.add('fade-out');
                     });
 
@@ -1026,8 +1626,9 @@
                             linkEl.href = info.link || "#";
                             linkEl.style.display = info.link ? 'inline-flex' : 'none';
                         }
+                        if (smallTitleEl) smallTitleEl.textContent = info.titulo;
 
-                        [titleEl, badgeEl, textEl, linkEl].forEach(el => {
+                        [titleEl, badgeEl, textEl, linkEl, smallTitleEl].forEach(el => {
                             if (el) el.classList.remove('fade-out');
                             if (el) el.classList.add('fade-in');
                         });
@@ -1063,13 +1664,32 @@
                 updateModelDetailsText();
 
                 const animate = () => {
-                    requestAnimationFrame(animate);
+                    if (!isCanvasVisible) return;
+                    animationFrameId = requestAnimationFrame(animate);
                     const activeMesh = loadedGroups[currentModelIdx];
                     if (activeMesh) {
                         activeMesh.rotation.y += 0.01;
                     }
                     renderer.render(scene, camera);
                 };
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        isCanvasVisible = entry.isIntersecting;
+                        if (isCanvasVisible) {
+                            if (!animationFrameId) {
+                                animate();
+                            }
+                        } else {
+                            if (animationFrameId) {
+                                cancelAnimationFrame(animationFrameId);
+                                animationFrameId = null;
+                            }
+                        }
+                    });
+                }, { threshold: 0.1 });
+
+                observer.observe(canvasContainer);
 
                 const resizeCanvas = () => {
                     if (!canvasContainer) return;
@@ -1081,7 +1701,6 @@
                 };
 
                 window.addEventListener('resize', resizeCanvas);
-                animate();
             }
 
             // Lógica del Pixel Art Studio
@@ -1675,6 +2294,175 @@
                 initCanvas();
             });
         });
+    </script>
+
+    <!-- FONDO LÍQUIDO GEOMÉTRICO (WEBGL) - AISLADO EN SU PROPIO SCOPE -->
+    <script>
+        (function () {
+            const bgCanvas = document.getElementById('webgl-bg-canvas');
+            if (!bgCanvas) return;
+
+            const bgGl = bgCanvas.getContext('webgl', { antialias: true, powerPreference: "high-performance" }) || bgCanvas.getContext('experimental-webgl');
+
+            if (!bgGl) {
+                console.error('WebGL no está disponible para el fondo.');
+                return;
+            }
+
+            // Vertex Shader simple para quad de pantalla completa
+            const bgVsSource = `
+                attribute vec2 a_position;
+                varying vec2 v_uv;
+                void main() {
+                    v_uv = a_position * 0.5 + 0.5;
+                    gl_Position = vec4(a_position, 0.0, 1.0);
+                }
+            `;
+
+            // Fragment Shader: Formas Geométricas Puras en colores planos con degradado de fondo
+            const bgFsSource = `
+                precision highp float;
+
+                uniform vec2 u_resolution;
+                uniform float u_time;
+
+                varying vec2 v_uv;
+
+                // Fusión geométrica suave (Smooth Minimum)
+                float smin(float a, float b, float k) {
+                    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+                    return mix(b, a, h) - k * h * (1.0 - h);
+                }
+
+                // Signed Distance Function (SDF) para círculos
+                float sdCircle(vec2 p, float r) {
+                    return length(p) - r;
+                }
+
+                void main() {
+                    vec2 st = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+
+                    st *= 1.5;
+
+                    float t = u_time * 0.4;
+                    float fusion = 0.35;
+
+                    // 1. Capa de Burbujas Intermedias (#146768)
+                    float dTeal = 100.0;
+                    for (int i = 0; i < 7; i++) {
+                        float fi = float(i);
+                        float speedY = 0.14 + mod(fi * 0.09, 0.18);
+                        float posY = mod(t * speedY + fi * 1.1, 4.2) - 2.1;
+                        float posX = sin(t * 0.3 + fi * 1.8) * 0.75 + cos(fi * 3.1) * 0.35;
+                        float radius = 0.38 + 0.14 * sin(fi * 1.3 + t * 0.7);
+
+                        vec2 pos = vec2(posX, posY);
+                        dTeal = smin(dTeal, sdCircle(st - pos, radius), fusion * 1.1);
+                    }
+
+                    // 2. Capa de Burbujas Principales (#a9d9e5) sin interacción del ratón
+                    float dLight = 100.0;
+
+                    for (int i = 0; i < 8; i++) {
+                        float fi = float(i);
+                        float speedY = 0.18 + mod(fi * 0.11, 0.22);
+                        float posY = mod(t * speedY + fi * 0.85, 4.0) - 2.0;
+                        float posX = sin(t * 0.35 + fi * 1.4) * 0.65 + cos(fi * 2.8) * 0.3;
+                        float radius = 0.34 + 0.15 * sin(fi * 1.6 + t * 0.8);
+
+                        vec2 pos = vec2(posX, posY);
+                        dLight = smin(dLight, sdCircle(st - pos, radius), fusion);
+                    }
+
+                    // Definición vectorial limpia
+                    float pixelSize = 1.5 / min(u_resolution.x, u_resolution.y);
+                    float maskTeal = smoothstep(pixelSize, -pixelSize, dTeal);
+                    float maskLight = smoothstep(pixelSize, -pixelSize, dLight);
+
+                    // Colores exactos indicados
+                    vec3 colorDark1 = vec3(0.035, 0.125, 0.122); // #09201f
+                    vec3 colorDark2 = vec3(0.024, 0.051, 0.059); // #060d0f
+                    vec3 colorTeal  = vec3(0.078, 0.404, 0.408); // #146768
+                    vec3 colorLight = vec3(0.663, 0.851, 0.898); // #a9d9e5
+
+                    // Degradado de fondo (#060d0f -> #09201f)
+                    float bgFactor = clamp(v_uv.y + (v_uv.x - 0.5) * 0.3, 0.0, 1.0);
+                    vec3 bgColor = mix(colorDark2, colorDark1, bgFactor);
+
+                    // Composición plana
+                    vec3 finalColor = mix(bgColor, colorTeal, maskTeal);
+                    finalColor = mix(finalColor, colorLight, maskLight);
+
+                    gl_FragColor = vec4(finalColor, 1.0);
+                }
+            `;
+
+            function createBgShader(gl, type, source) {
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    console.error('Error compilando shader de fondo:', gl.getShaderInfoLog(shader));
+                    gl.deleteShader(shader);
+                    return null;
+                }
+                return shader;
+            }
+
+            const bgVertexShader = createBgShader(bgGl, bgGl.VERTEX_SHADER, bgVsSource);
+            const bgFragmentShader = createBgShader(bgGl, bgGl.FRAGMENT_SHADER, bgFsSource);
+
+            const bgProgram = bgGl.createProgram();
+            bgGl.attachShader(bgProgram, bgVertexShader);
+            bgGl.attachShader(bgProgram, bgFragmentShader);
+            bgGl.linkProgram(bgProgram);
+            bgGl.useProgram(bgProgram);
+
+            // Quad completo para la pantalla
+            const bgPositionBuffer = bgGl.createBuffer();
+            bgGl.bindBuffer(bgGl.ARRAY_BUFFER, bgPositionBuffer);
+            bgGl.bufferData(bgGl.ARRAY_BUFFER, new Float32Array([
+                -1.0, -1.0,
+                 1.0, -1.0,
+                -1.0,  1.0,
+                -1.0,  1.0,
+                 1.0, -1.0,
+                 1.0,  1.0,
+            ]), bgGl.STATIC_DRAW);
+
+            const bgPositionLocation = bgGl.getAttribLocation(bgProgram, 'a_position');
+            bgGl.enableVertexAttribArray(bgPositionLocation);
+            bgGl.vertexAttribPointer(bgPositionLocation, 2, bgGl.FLOAT, false, 0, 0);
+
+            // Locaciones de Uniforms
+            const bgUResolution = bgGl.getUniformLocation(bgProgram, 'u_resolution');
+            const bgUTime = bgGl.getUniformLocation(bgProgram, 'u_time');
+
+            function resizeBgCanvas() {
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                bgCanvas.width = window.innerWidth * dpr;
+                bgCanvas.height = window.innerHeight * dpr;
+                bgGl.viewport(0, 0, bgCanvas.width, bgCanvas.height);
+            }
+
+            window.addEventListener('resize', resizeBgCanvas);
+            resizeBgCanvas();
+
+            const bgStartTime = performance.now();
+
+            function renderBg(currentTime) {
+                const elapsedTime = (currentTime - bgStartTime) * 0.001;
+
+                bgGl.uniform2f(bgUResolution, bgCanvas.width, bgCanvas.height);
+                bgGl.uniform1f(bgUTime, elapsedTime);
+
+                bgGl.drawArrays(bgGl.TRIANGLES, 0, 6);
+                requestAnimationFrame(renderBg);
+            }
+
+            requestAnimationFrame(renderBg);
+
+        })();
     </script>
 </body>
 </html>
